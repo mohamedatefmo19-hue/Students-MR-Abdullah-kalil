@@ -12,126 +12,44 @@
             --bg-deep: #020012;
             --glass-bg: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.06);
-            --glass-hover: rgba(255, 255, 255, 0.05);
             --text-primary: #f0f0f7;
-            --text-secondary: #b8b8d4;
             --text-muted: #6e6e90;
             --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
-            --accent-1: #4da8da;
-            --accent-2: #7c5ce7;
-            --accent-3: #22d3bb;
-            --shadow-glow: 0 0 80px rgba(124, 92, 231, 0.25);
-            --radius-sm: 10px;
-            --radius-md: 16px;
             --radius-lg: 20px;
             --font: 'Cairo', sans-serif;
-            --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        html { font-size:16px; }
-        body {
-            font-family:var(--font);
-            background:var(--bg-deep);
-            color:var(--text-primary);
-            display:flex;
-            min-height:100vh;
-            overflow-x:hidden;
-        }
-        .aurora { position:fixed; inset:0; pointer-events:none; z-index:0; }
-        .aurora .orb { position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; animation:float 22s infinite ease-in-out; }
-        .aurora .orb:nth-child(1){ width:700px; height:700px; background:#4da8da; top:-250px; left:-200px; }
-        .aurora .orb:nth-child(2){ width:550px; height:550px; background:#7c5ce7; bottom:-200px; right:-180px; animation-delay:-10s; }
-        @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(50px,-40px) scale(1.1);} 66%{transform:translate(-40px,50px) scale(0.9);} }
-        .sidebar {
-            width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px);
-            border-left:1px solid var(--glass-border); padding:24px 14px; display:flex; flex-direction:column;
-            gap:4px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto;
-        }
-        .sidebar .logo { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:20px; text-decoration:none; }
-        .sidebar .logo-icon { width:42px; height:42px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; box-shadow:var(--shadow-glow); }
-        .sidebar nav { display:flex; flex-direction:column; gap:2px; flex:1; }
-        .sidebar nav a {
-            display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px;
-            color:var(--text-secondary); text-decoration:none; font-weight:500; font-size:0.88rem; transition:var(--transition);
-        }
-        .sidebar nav a:hover, .sidebar nav a.active { background:rgba(255,255,255,0.05); color:#fff; }
-        .sidebar nav a.active { background:rgba(124,92,231,0.12); }
-        .main { flex:1; display:flex; flex-direction:column; overflow-y:auto; max-height:100vh; position:relative; z-index:5; }
-        .topbar {
-            padding:14px 24px; display:flex; justify-content:space-between; align-items:center;
-            background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border);
-            position:sticky; top:0; z-index:20;
-        }
-        .topbar h2 { font-size:1.2rem; font-weight:700; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; transition:var(--transition); }
-        .btn-primary { background:var(--accent-gradient); border:none; color:#fff; }
-        .content { padding:24px; flex:1; display:flex; flex-direction:column; gap:20px; max-width:900px; margin:0 auto; width:100%; }
-        .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
-        .profile-header { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-        .avatar-wrapper { position:relative; display:inline-block; }
-        .avatar-ring { width:90px; height:90px; border-radius:50%; padding:3px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; }
-        .avatar-ring img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
-        .avatar-upload-btn {
-            position:absolute; bottom:0; left:0; background:var(--accent-gradient); border:none;
-            width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-            cursor:pointer; color:#fff; font-size:0.9rem; box-shadow:0 4px 12px rgba(0,0,0,0.5);
-        }
-        .badge { padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:600; }
-        .badge-success { background:rgba(34,211,187,0.2); color:#22d3bb; }
-        .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        .info-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
-        .stats-inline { display:flex; gap:20px; flex-wrap:wrap; }
-        .stat-item { text-align:center; }
-        .stat-item .value { font-size:1.8rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .stat-item .label { font-size:0.75rem; color:var(--text-muted); }
-        .table-wrapper { overflow-x:auto; }
-        table { width:100%; border-collapse:collapse; font-size:0.82rem; }
-        th, td { padding:10px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); }
-        th { color:var(--text-muted); font-weight:600; font-size:0.7rem; }
-        .empty-state { text-align:center; padding:30px; color:var(--text-muted); }
-        .menu-toggle { display:none; background:none; border:none; color:#fff; font-size:1.6rem; cursor:pointer; }
-        .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; }
-        @media (max-width:768px) {
-            .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; }
-            .sidebar.open { right:0; }
-            .overlay.show { display:block; }
-            .menu-toggle { display:block; }
-            .info-grid { grid-template-columns:1fr; }
-        }
+        body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
+        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; overflow-y:auto; }
+        .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; margin-bottom:20px; }
+        .sidebar nav a { display:block; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; margin-bottom:4px; }
+        .sidebar nav a.active, .sidebar nav a:hover { background:rgba(255,255,255,0.05); color:#fff; }
+        .main { flex:1; overflow-y:auto; max-height:100vh; }
+        .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; }
+        .content { padding:24px; max-width:700px; margin:0 auto; }
+        .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); margin-bottom:16px; }
+        .avatar-section { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+        .avatar-preview { width:90px; height:90px; border-radius:50%; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:#fff; object-fit:cover; }
+        .upload-btn { background:var(--accent-gradient); border:none; padding:8px 18px; border-radius:24px; color:#fff; font-weight:600; cursor:pointer; font-size:0.9rem; margin-top:10px; }
+        .message { padding:10px; border-radius:14px; margin:10px 0; font-size:0.85rem; display:none; }
+        .success { background:rgba(34,211,187,0.15); color:#22d3bb; border:1px solid rgba(34,211,187,0.3); }
+        .error { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
+        .btn { padding:8px 16px; border-radius:24px; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="aurora"><div class="orb"></div><div class="orb"></div></div>
-<div class="overlay" id="overlay"></div>
-
-<aside class="sidebar" id="sidebar">
-    <a href="index.html" class="logo">
-        <div class="logo-icon">ع</div>
-        <span style="font-weight:700;color:#fff;">لوحة التحكم<small style="display:block;font-size:0.65rem;color:var(--text-muted);">مستر عبدالله خليل</small></span>
-    </a>
+<div class="sidebar">
+    <div class="logo-icon">ع</div>
     <nav>
         <a href="dashboard.html">🏠 الرئيسية</a>
-        <a href="courses.html">📚 كورساتي</a>
-        <a href="exams.html">📝 الامتحانات</a>
-        <a href="results.html">📊 نتائجي</a>
         <a href="profile.html" class="active">👤 حسابي</a>
         <a href="settings.html">⚙️ الإعدادات</a>
     </nav>
-</aside>
-
+</div>
 <div class="main">
-    <div class="topbar">
-        <button class="menu-toggle" id="menuToggle">☰</button>
-        <h2>👤 الملف الشخصي</h2>
-        <div>
-            <a href="index.html" class="btn btn-sm">الموقع</a>
-            <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button>
-        </div>
-    </div>
-    <div class="content" id="profileContent">
-        <div class="empty-state">⏳ جاري تحميل بياناتك...</div>
-    </div>
+    <div class="topbar"><h2>👤 الملف الشخصي</h2><a href="dashboard.html" class="btn">رجوع</a></div>
+    <div class="content" id="profileContent">⏳ جاري التحميل...</div>
 </div>
 
 <script>
@@ -145,119 +63,78 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const CLOUDINARY_CLOUD = "deaevfmvm", CLOUDINARY_PRESET = "ml_default", CLOUDINARY_KEY = "864215656447737";
 
     const studentId = localStorage.getItem('studentId');
-    if (!studentId) { window.location.href = 'login.html'; }
+    if (!studentId) window.location.href = 'login.html';
 
     async function loadProfile() {
         const container = document.getElementById('profileContent');
         try {
-            const userDoc = await db.collection('students').doc(studentId).get();
-            if (!userDoc.exists || userDoc.data().status !== 'مفعل') {
-                localStorage.clear(); window.location.href='login.html'; return;
-            }
-            const user = userDoc.data();
-            const grade = user.grade || '';
-
-            // الصورة من localStorage أولاً (للتحديث الفوري)
+            const doc = await db.collection('students').doc(studentId).get();
+            if (!doc.exists || doc.data().status !== 'مفعل') { window.location.href='login.html'; return; }
+            const user = doc.data();
             const avatarUrl = localStorage.getItem('studentAvatar') || user.avatar || '';
 
-            // إحصائيات
-            let coursesCount = 0, examResults = [], assignments = [];
-            try { coursesCount = (await db.collection('courses').where('grade','==',grade).get()).size; } catch(e){}
-            try {
-                const snap = await db.collection('examResults').where('studentId','==',studentId).orderBy('createdAt','desc').limit(5).get();
-                snap.forEach(d => examResults.push({id:d.id, ...d.data()}));
-            } catch(e){}
-            try {
-                const snap = await db.collection('assignmentSubmissions').where('studentId','==',studentId).orderBy('submittedAt','desc').limit(5).get();
-                snap.forEach(d => assignments.push({id:d.id, ...d.data()}));
-            } catch(e){}
-
-            const avgScore = examResults.length ? Math.round(examResults.reduce((a,b)=>a+(b.percentage||0),0)/examResults.length) : 0;
-
             container.innerHTML = `
-            <div class="card profile-header">
-                <div class="avatar-wrapper">
-                    <div class="avatar-ring">${avatarUrl ? `<img src="${avatarUrl}" alt="صورة الطالب">` : '👤'}</div>
-                    <button class="avatar-upload-btn" onclick="uploadAvatar()" title="تغيير الصورة">📷</button>
+                <div class="card avatar-section">
+                    <img class="avatar-preview" src="${avatarUrl || ''}" alt="الصورة" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="avatar-preview" style="display:${avatarUrl ? 'none' : 'flex'};">👤</div>
+                    <div>
+                        <h3>${user.name || 'طالب'}</h3>
+                        <p style="color:var(--text-muted);">${user.grade || ''}</p>
+                        <button class="upload-btn" onclick="uploadAvatar()">📷 تغيير الصورة</button>
+                        <div class="message" id="uploadMsg"></div>
+                    </div>
                 </div>
-                <div style="flex:1;">
-                    <h2>${user.name || 'طالب'}</h2>
-                    <p style="color:var(--text-muted);">الصف: ${grade} | <span class="badge badge-success">مفعل</span></p>
-                </div>
-            </div>
-            <div class="card info-grid">
-                <div class="info-row"><span>البريد الإلكتروني</span><span>${user.email||'—'}</span></div>
-                <div class="info-row"><span>رقم الهاتف</span><span>${user.phone||'—'}</span></div>
-                <div class="info-row"><span>ولي الأمر</span><span>${user.parentPhone||'—'}</span></div>
-                <div class="info-row"><span>تاريخ التسجيل</span><span>${user.createdAt?.toDate?.().toLocaleDateString('ar-EG')||'—'}</span></div>
-            </div>
-            <div class="card stats-inline">
-                <div class="stat-item"><div class="value">${coursesCount}</div><div class="label">كورس</div></div>
-                <div class="stat-item"><div class="value">${examResults.length}</div><div class="label">امتحان</div></div>
-                <div class="stat-item"><div class="value">${assignments.length}</div><div class="label">واجب</div></div>
-                <div class="stat-item"><div class="value">${avgScore}%</div><div class="label">متوسط النتائج</div></div>
-            </div>
-            <h3>📝 نتائج الامتحانات الأخيرة</h3>
-            <div class="card table-wrapper">
-                <table><thead><tr><th>الامتحان</th><th>الدرجة</th><th>النسبة</th><th>التاريخ</th></tr></thead>
-                <tbody>${examResults.length ? examResults.map(r => `<tr><td>${r.examName||''}</td><td>${r.score||0}/${r.total||0}</td><td>${r.percentage||0}%</td><td>${r.createdAt?.toDate?.().toLocaleDateString('ar-EG')||''}</td></tr>`).join('') : '<tr><td colspan="4" class="empty-state">لا توجد نتائج بعد</td></tr>'}</tbody></table>
-            </div>
-            <h3>📋 الواجبات المسلّمة</h3>
-            <div class="card table-wrapper">
-                <table><thead><tr><th>الواجب</th><th>الحالة</th><th>الدرجة</th><th>التعليق</th></tr></thead>
-                <tbody>${assignments.length ? assignments.map(a => `<tr><td>${a.assignmentDesc||''}</td><td><span class="badge ${a.score!==undefined?'badge-success':''}">${a.score!==undefined?'مصحح':'قيد التصحيح'}</span></td><td>${a.score||'-'}</td><td>${a.feedback||'—'}</td></tr>`).join('') : '<tr><td colspan="4" class="empty-state">لا توجد واجبات بعد</td></tr>'}</tbody></table>
-            </div>
             `;
         } catch(e) {
-            console.error(e);
-            container.innerHTML = '<div class="empty-state">❌ حدث خطأ في تحميل البيانات</div>';
+            container.innerHTML = '<p>❌ خطأ في تحميل البيانات</p>';
         }
     }
     loadProfile();
 
-    // ✅ دالة رفع الصورة مع تحديث localStorage
     window.uploadAvatar = function() {
+        const msgEl = document.getElementById('uploadMsg');
+        msgEl.className = 'message';
+        msgEl.style.display = 'block';
+        msgEl.textContent = '⏳ جاري فتح نافذة الرفع...';
+        msgEl.classList.add('success');
+
         window.cloudinary.openUploadWidget({
-            cloudName: CLOUDINARY_CLOUD, uploadPreset: CLOUDINARY_PRESET, apiKey: CLOUDINARY_KEY,
-            sources: ['local','camera'], multiple: false, resourceType: 'image',
-            clientAllowedFormats: ['png','jpg','jpeg'], maxFileSize: 5000000, language: 'ar'
+            cloudName: "deaevfmvm",
+            uploadPreset: "ml_default",
+            apiKey: "864215656447737",
+            sources: ['local', 'camera'],
+            multiple: false,
+            resourceType: 'image',
+            clientAllowedFormats: ['png', 'jpg', 'jpeg'],
+            maxFileSize: 5000000,
+            language: 'ar'
         }, async (error, result) => {
-            if (!error && result?.event === 'success') {
+            if (error) {
+                msgEl.className = 'message error';
+                msgEl.textContent = '❌ فشل الرفع: ' + (error.message || 'خطأ غير معروف');
+                return;
+            }
+            if (result && result.event === 'success') {
                 const url = result.info.secure_url;
-                // تحديث Firestore
-                await db.collection('students').doc(studentId).update({ avatar: url });
-                // ✅ تحديث localStorage فوراً
-                localStorage.setItem('studentAvatar', url);
-                // إعادة تحميل الصفحة لتظهر الصورة الجديدة
-                loadProfile();
+                msgEl.className = 'message success';
+                msgEl.textContent = '✅ تم رفع الصورة بنجاح! جاري الحفظ...';
+
+                try {
+                    // تحديث Firestore
+                    await db.collection('students').doc(studentId).update({ avatar: url });
+                    // تحديث localStorage
+                    localStorage.setItem('studentAvatar', url);
+                    msgEl.textContent = '✅ تم حفظ الصورة بنجاح! سيتم التحديث الآن.';
+                    setTimeout(() => loadProfile(), 800);
+                } catch (e) {
+                    msgEl.className = 'message error';
+                    msgEl.textContent = '❌ تم الرفع ولكن فشل الحفظ في قاعدة البيانات: ' + e.message;
+                }
             }
         });
     };
-
-    window.logout = () => { localStorage.clear(); window.location.href='login.html'; };
-
-    // Mobile sidebar toggle
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    document.getElementById('menuToggle').addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('show');
-    });
-    overlay.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('show');
-    });
-    document.querySelectorAll('.sidebar nav a').forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('open');
-                overlay.classList.remove('show');
-            }
-        });
-    });
 </script>
 </body>
 </html>

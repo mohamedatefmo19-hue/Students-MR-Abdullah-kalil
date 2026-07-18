@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الملف الشخصي | مستر عبدالله خليل</title>
-    <!-- Firebase SDKs -->
+    <!-- Firebase + Cloudinary -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <!-- Cloudinary Widget -->
     <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
     <style>
         :root {
@@ -45,37 +43,58 @@
         .aurora .orb:nth-child(1){ width:700px; height:700px; background:#4da8da; top:-250px; left:-200px; }
         .aurora .orb:nth-child(2){ width:550px; height:550px; background:#7c5ce7; bottom:-200px; right:-180px; animation-delay:-10s; }
         @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(50px,-40px) scale(1.1);} 66%{transform:translate(-40px,50px) scale(0.9);} }
-        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto; }
+        .sidebar {
+            width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px);
+            border-left:1px solid var(--glass-border); padding:24px 14px; display:flex; flex-direction:column;
+            gap:4px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto;
+        }
         .sidebar .logo { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:20px; text-decoration:none; }
         .sidebar .logo-icon { width:42px; height:42px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
         .sidebar nav { display:flex; flex-direction:column; gap:2px; flex:1; }
-        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-secondary); text-decoration:none; font-weight:500; font-size:0.88rem; transition:var(--transition); cursor:pointer; }
+        .sidebar nav a {
+            display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px;
+            color:var(--text-secondary); text-decoration:none; font-weight:500; font-size:0.88rem; transition:var(--transition);
+        }
         .sidebar nav a:hover, .sidebar nav a.active { background:rgba(255,255,255,0.05); color:#fff; }
         .sidebar nav a.active { background:rgba(124,92,231,0.12); }
         .main { flex:1; display:flex; flex-direction:column; overflow-y:auto; max-height:100vh; position:relative; z-index:5; }
-        .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; z-index:20; }
+        .topbar {
+            padding:14px 24px; display:flex; justify-content:space-between; align-items:center;
+            background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border);
+            position:sticky; top:0; z-index:20;
+        }
         .topbar h2 { font-size:1.2rem; font-weight:700; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
         .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; transition:var(--transition); }
         .btn-primary { background:var(--accent-gradient); border:none; color:#fff; }
         .content { padding:24px; flex:1; display:flex; flex-direction:column; gap:20px; max-width:900px; margin:0 auto; width:100%; }
         .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
         .profile-header { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-        .avatar-ring { width:90px; height:90px; border-radius:50%; padding:3px; background:var(--accent-gradient); flex-shrink:0; }
+        .avatar-ring { width:90px; height:90px; border-radius:50%; padding:3px; background:var(--accent-gradient); flex-shrink:0; position:relative; }
         .avatar-ring img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
-        .avatar-upload { position:absolute; bottom:0; left:0; background:var(--accent-gradient); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:0.9rem; border:none; }
+        .avatar-upload {
+            position:absolute; bottom:0; left:0; background:var(--accent-gradient); border-radius:50%;
+            width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+            color:#fff; font-size:0.9rem; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.4);
+        }
         .badge { padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:600; }
         .badge-success { background:rgba(34,211,187,0.2); color:#22d3bb; }
         .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
         .info-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .stats-inline { display:flex; gap:20px; flex-wrap:wrap; }
+        .stat-item { text-align:center; }
+        .stat-item .value { font-size:1.8rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .stat-item .label { font-size:0.75rem; color:var(--text-muted); }
         .table-wrapper { overflow-x:auto; }
         table { width:100%; border-collapse:collapse; font-size:0.82rem; }
         th, td { padding:10px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); }
-        th { color:var(--text-muted); font-weight:600; font-size:0.7rem; }
+        th { color:var(--text-muted); font-weight:600; font-size:0.7rem; text-transform:uppercase; }
         .empty-state { text-align:center; padding:30px; color:var(--text-muted); }
         .menu-toggle { display:none; background:none; border:none; color:#fff; font-size:1.6rem; cursor:pointer; }
+        .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; }
         @media (max-width:768px) {
             .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; }
             .sidebar.open { right:0; }
+            .overlay.show { display:block; }
             .menu-toggle { display:block; }
             .info-grid { grid-template-columns:1fr; }
         }
@@ -84,9 +103,13 @@
 </head>
 <body>
 <div class="aurora"><div class="orb"></div><div class="orb"></div></div>
-<div class="overlay" id="overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40;"></div>
+<div class="overlay" id="overlay"></div>
+
 <aside class="sidebar" id="sidebar">
-    <a href="index.html" class="logo"><div class="logo-icon">ع</div><span>لوحة التحكم</span></a>
+    <a href="index.html" class="logo">
+        <div class="logo-icon">ع</div>
+        <span style="font-weight:700;color:#fff;">لوحة التحكم<small style="display:block;font-size:0.65rem;color:var(--text-muted);">مستر عبدالله خليل</small></span>
+    </a>
     <nav>
         <a href="dashboard.html">🏠 الرئيسية</a>
         <a href="courses.html">📚 كورساتي</a>
@@ -96,11 +119,15 @@
         <a href="settings.html">⚙️ الإعدادات</a>
     </nav>
 </aside>
+
 <div class="main">
     <div class="topbar">
         <button class="menu-toggle" id="menuToggle">☰</button>
         <h2>👤 الملف الشخصي</h2>
-        <div><a href="index.html" class="btn btn-sm">الموقع</a> <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button></div>
+        <div>
+            <a href="index.html" class="btn btn-sm">الموقع</a>
+            <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button>
+        </div>
     </div>
     <div class="content" id="profileContent">
         <div class="empty-state">⏳ جاري تحميل بياناتك...</div>
@@ -108,7 +135,6 @@
 </div>
 
 <script>
-(function() {
     const firebaseConfig = {
         apiKey: "AIzaSyDT0xGqGHzyyeB4qcz5AGMKxESCGZNNEWE",
         authDomain: "abdullah-khalil.firebaseapp.com",
@@ -122,7 +148,7 @@
     const CLOUDINARY_CLOUD = "deaevfmvm", CLOUDINARY_PRESET = "ml_default", CLOUDINARY_KEY = "864215656447737";
 
     const studentId = localStorage.getItem('studentId');
-    if (!studentId) window.location.href = 'login.html';
+    if (!studentId) { window.location.href = 'login.html'; }
 
     async function loadProfile() {
         const container = document.getElementById('profileContent');
@@ -134,6 +160,7 @@
             const user = userDoc.data();
             const grade = user.grade || '';
 
+            // إحصائيات
             let coursesCount = 0, examResults = [], assignments = [];
             try { coursesCount = (await db.collection('courses').where('grade','==',grade).get()).size; } catch(e){}
             try {
@@ -162,23 +189,23 @@
                 <div class="info-row"><span>البريد الإلكتروني</span><span>${user.email||'—'}</span></div>
                 <div class="info-row"><span>رقم الهاتف</span><span>${user.phone||'—'}</span></div>
                 <div class="info-row"><span>ولي الأمر</span><span>${user.parentPhone||'—'}</span></div>
-                <div class="info-row"><span>تاريخ التسجيل</span><span>${user.createdAt?.toDate().toLocaleDateString('ar-EG')||'—'}</span></div>
+                <div class="info-row"><span>تاريخ التسجيل</span><span>${user.createdAt?.toDate?.().toLocaleDateString('ar-EG')||'—'}</span></div>
             </div>
-            <div class="card" style="display:flex; gap:20px; flex-wrap:wrap;">
-                <div style="text-align:center;"><div style="font-size:2rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">${coursesCount}</div><div style="color:var(--text-muted);">كورس</div></div>
-                <div style="text-align:center;"><div style="font-size:2rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">${examResults.length}</div><div style="color:var(--text-muted);">امتحان</div></div>
-                <div style="text-align:center;"><div style="font-size:2rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">${assignments.length}</div><div style="color:var(--text-muted);">واجب</div></div>
-                <div style="text-align:center;"><div style="font-size:2rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">${avgScore}%</div><div style="color:var(--text-muted);">متوسط النتائج</div></div>
+            <div class="card stats-inline">
+                <div class="stat-item"><div class="value">${coursesCount}</div><div class="label">كورس</div></div>
+                <div class="stat-item"><div class="value">${examResults.length}</div><div class="label">امتحان</div></div>
+                <div class="stat-item"><div class="value">${assignments.length}</div><div class="label">واجب</div></div>
+                <div class="stat-item"><div class="value">${avgScore}%</div><div class="label">متوسط النتائج</div></div>
             </div>
             <h3>📝 نتائج الامتحانات الأخيرة</h3>
             <div class="card table-wrapper">
                 <table><thead><tr><th>الامتحان</th><th>الدرجة</th><th>النسبة</th><th>التاريخ</th></tr></thead>
-                <tbody>${examResults.length ? examResults.map(r => `<tr><td>${r.examName||''}</td><td>${r.score||0}/${r.total||0}</td><td>${r.percentage||0}%</td><td>${r.createdAt?.toDate().toLocaleDateString('ar-EG')||''}</td></tr>`).join('') : '<tr><td colspan="4" class="empty-state">لا توجد نتائج</td></tr>'}</tbody></table>
+                <tbody>${examResults.length ? examResults.map(r => `<tr><td>${r.examName||''}</td><td>${r.score||0}/${r.total||0}</td><td>${r.percentage||0}%</td><td>${r.createdAt?.toDate?.().toLocaleDateString('ar-EG')||''}</td></tr>`).join('') : '<tr><td colspan="4" class="empty-state">لا توجد نتائج بعد</td></tr>'}</tbody></table>
             </div>
             <h3>📋 الواجبات المسلّمة</h3>
             <div class="card table-wrapper">
                 <table><thead><tr><th>الواجب</th><th>الحالة</th><th>الدرجة</th><th>التعليق</th></tr></thead>
-                <tbody>${assignments.length ? assignments.map(a => `<tr><td>${a.assignmentDesc||''}</td><td><span class="badge ${a.score!==undefined?'badge-success':''}">${a.score!==undefined?'مصحح':'قيد التصحيح'}</span></td><td>${a.score||'-'}</td><td>${a.feedback||'—'}</td></tr>`).join('') : '<tr><td colspan="4" class="empty-state">لا توجد واجبات</td></tr>'}</tbody></table>
+                <tbody>${assignments.length ? assignments.map(a => `<tr><td>${a.assignmentDesc||''}</td><td><span class="badge ${a.score!==undefined?'badge-success':''}">${a.score!==undefined?'مصحح':'قيد التصحيح'}</span></td><td>${a.score||'-'}</td><td>${a.feedback||'—'}</td></tr>`).join('') : '<tr><td colspan="4" class="empty-state">لا توجد واجبات بعد</td></tr>'}</tbody></table>
             </div>
             `;
         } catch(e) {
@@ -198,23 +225,31 @@
                 const url = result.info.secure_url;
                 await db.collection('students').doc(studentId).update({ avatar: url });
                 loadProfile();
-                alert('✅ تم تحديث الصورة');
             }
         });
     };
 
     window.logout = () => { localStorage.clear(); window.location.href='login.html'; };
 
-    // Mobile sidebar
-    document.getElementById('menuToggle').addEventListener('click',()=>{
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('overlay').style.display = document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';
+    // Mobile sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
     });
-    document.getElementById('overlay').addEventListener('click',()=>{
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('overlay').style.display = 'none';
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
     });
-})();
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            }
+        });
+    });
 </script>
 </body>
 </html>

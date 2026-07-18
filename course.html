@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تفاصيل الكورس | مستر عبدالله خليل</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
@@ -12,72 +11,34 @@
             --bg-deep: #020012;
             --glass-bg: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.06);
-            --glass-hover: rgba(255, 255, 255, 0.05);
             --text-primary: #f0f0f7;
-            --text-secondary: #b8b8d4;
             --text-muted: #6e6e90;
             --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
-            --accent-1: #4da8da;
-            --accent-2: #7c5ce7;
-            --accent-3: #22d3bb;
-            --shadow-glow: 0 0 80px rgba(124, 92, 231, 0.25);
-            --radius-sm: 10px;
-            --radius-md: 16px;
             --radius-lg: 20px;
             --font: 'Cairo', sans-serif;
-            --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        html { font-size:16px; }
-        body {
-            font-family:var(--font);
-            background:var(--bg-deep);
-            color:var(--text-primary);
-            display:flex;
-            min-height:100vh;
-            overflow-x:hidden;
-        }
-        .aurora { position:fixed; inset:0; pointer-events:none; z-index:0; }
-        .aurora .orb { position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; animation:float 22s infinite ease-in-out; }
-        .aurora .orb:nth-child(1){ width:700px; height:700px; background:#4da8da; top:-250px; left:-200px; }
-        .aurora .orb:nth-child(2){ width:550px; height:550px; background:#7c5ce7; bottom:-200px; right:-180px; animation-delay:-10s; }
-        @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(50px,-40px) scale(1.1);} 66%{transform:translate(-40px,50px) scale(0.9);} }
-        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto; }
+        body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
+        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; overflow-y:auto; }
         .sidebar .logo { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:20px; text-decoration:none; }
-        .sidebar .logo-icon { width:42px; height:42px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
-        .sidebar nav { display:flex; flex-direction:column; gap:2px; flex:1; }
-        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-secondary); text-decoration:none; font-weight:500; font-size:0.88rem; transition:var(--transition); cursor:pointer; }
+        .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
+        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-weight:500; font-size:0.88rem; }
         .sidebar nav a:hover, .sidebar nav a.active { background:rgba(255,255,255,0.05); color:#fff; }
-        .sidebar nav a.active { background:rgba(124,92,231,0.12); }
-        .main { flex:1; display:flex; flex-direction:column; overflow-y:auto; max-height:100vh; position:relative; z-index:5; }
+        .main { flex:1; overflow-y:auto; max-height:100vh; }
         .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; z-index:20; }
-        .topbar h2 { font-size:1.2rem; font-weight:700; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; transition:var(--transition); }
-        .btn-primary { background:var(--accent-gradient); border:none; color:#fff; }
-        .content { padding:24px; flex:1; max-width:1000px; margin:0 auto; width:100%; }
+        .topbar h2 { background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; }
+        .content { padding:24px; max-width:1000px; margin:0 auto; }
         .course-banner { width:100%; height:220px; border-radius:var(--radius-lg); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:4rem; margin-bottom:24px; object-fit:cover; }
         .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); margin-bottom:20px; }
-        .teacher-card { display:flex; align-items:center; gap:16px; }
-        .teacher-avatar { width:60px; height:60px; border-radius:50%; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:#fff; }
-        .progress-bar { height:6px; background:rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; margin-top:8px; }
-        .progress-fill { height:100%; background:var(--accent-gradient); border-radius:8px; width:0%; }
-        .lesson-list { display:flex; flex-direction:column; gap:8px; }
-        .lesson-item { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-radius:var(--radius-md); background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); transition:var(--transition); }
-        .lesson-item:hover { background:var(--glass-hover); }
-        .lesson-item .icon { margin-left:12px; }
-        .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
-        .menu-toggle { display:none; background:none; border:none; color:#fff; font-size:1.6rem; cursor:pointer; }
-        @media (max-width:768px) {
-            .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; }
-            .sidebar.open { right:0; }
-            .menu-toggle { display:block; }
-            .course-banner { height:160px; font-size:3rem; }
-        }
+        .lesson-item { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-radius:14px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); margin-bottom:8px; text-decoration:none; color:inherit; }
+        .lesson-item:hover { background:rgba(255,255,255,0.05); }
+        @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="aurora"><div class="orb"></div><div class="orb"></div></div>
+<div class="aurora" style="position:fixed; inset:0; pointer-events:none; z-index:0;"><div class="orb" style="position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; width:700px; height:700px; background:#4da8da; top:-250px; left:-200px;"></div><div class="orb" style="position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; width:550px; height:550px; background:#7c5ce7; bottom:-200px; right:-180px;"></div></div>
 <div class="overlay" id="overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40;"></div>
 <aside class="sidebar" id="sidebar">
     <a href="index.html" class="logo"><div class="logo-icon">ع</div><span>لوحة التحكم</span></a>
@@ -92,13 +53,11 @@
 </aside>
 <div class="main">
     <div class="topbar">
-        <button class="menu-toggle" id="menuToggle">☰</button>
+        <button class="menu-toggle" id="menuToggle" style="display:none; background:none; border:none; color:#fff; font-size:1.6rem; cursor:pointer;">☰</button>
         <h2>📖 تفاصيل الكورس</h2>
         <div><a href="courses.html" class="btn btn-sm">كل الكورسات</a> <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button></div>
     </div>
-    <div class="content" id="courseContent">
-        <div class="empty-state">⏳ جاري تحميل الكورس...</div>
-    </div>
+    <div class="content" id="courseContent"><div style="text-align:center; padding:60px;">⏳ جاري التحميل...</div></div>
 </div>
 
 <script>
@@ -116,111 +75,61 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const courseId = urlParams.get('id');
-
-    if (!courseId) {
-        document.getElementById('courseContent').innerHTML = '<div class="empty-state">⚠️ لم يتم تحديد كورس</div>';
-    } else {
-        loadCourse(courseId);
-    }
+    if (!courseId) document.getElementById('courseContent').innerHTML = '<div style="text-align:center;padding:60px;">⚠️ لم يتم تحديد كورس</div>';
+    else loadCourse(courseId);
 
     async function loadCourse(id) {
         const container = document.getElementById('courseContent');
         try {
             const courseDoc = await db.collection('courses').doc(id).get();
-            if (!courseDoc.exists) {
-                container.innerHTML = '<div class="empty-state">❌ الكورس غير موجود</div>';
-                return;
-            }
+            if (!courseDoc.exists) { container.innerHTML = '<div style="text-align:center;padding:60px;">❌ الكورس غير موجود</div>'; return; }
             const course = courseDoc.data();
+            const courseName = course.name; // اسم الكورس النصي
 
-            // جلب الدروس المرتبطة (نفترض وجود حقل courseId في مجموعة lessons)
+            // جلب المحاضرات باستخدام اسم الكورس (حقل course في lessons)
             let lessons = [];
             try {
-                const snap = await db.collection('lessons').where('courseId', '==', id).orderBy('order').get();
+                const snap = await db.collection('lessons').where('course', '==', courseName).get();
                 snap.forEach(doc => lessons.push({ id: doc.id, ...doc.data() }));
-            } catch(e){}
-
-            // جلب الواجبات (إن وجدت)
-            let assignments = [];
-            try {
-                const snap = await db.collection('assignments').where('courseId', '==', id).get();
-                snap.forEach(doc => assignments.push({ id: doc.id, ...doc.data() }));
-            } catch(e){}
-
-            // جلب الامتحانات (إن وجدت)
-            let exams = [];
-            try {
-                const snap = await db.collection('exams').where('courseId', '==', id).get();
-                snap.forEach(doc => exams.push({ id: doc.id, ...doc.data() }));
-            } catch(e){}
-
-            const progress = Math.floor(Math.random() * 60) + 20;
+            } catch(e) { console.warn('lessons load error'); }
 
             container.innerHTML = `
                 <img class="course-banner" src="${course.banner || ''}" alt="${course.name}" onerror="this.style.display='none';">
                 <div class="card">
-                    <h2 style="font-size:1.8rem; margin-bottom:8px;">${course.name}</h2>
-                    <p style="color:var(--text-secondary);">${course.grade || ''} | ${course.type || 'مجاني'}</p>
-                    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-                    <p style="margin-top:6px; color:var(--text-muted);">${progress}% مكتمل</p>
+                    <h2 style="font-size:1.8rem;">${course.name}</h2>
+                    <p style="color:var(--text-muted);">${course.grade || ''} | ${course.type || 'مجاني'}</p>
+                    <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:8px; margin-top:12px;"><div style="width:${Math.floor(Math.random()*60)+20}%; height:100%; background:var(--accent-gradient); border-radius:8px;"></div></div>
                 </div>
-                <div class="card teacher-card">
-                    <div class="teacher-avatar">👨‍🏫</div>
-                    <div>
-                        <h4>مستر عبدالله خليل</h4>
-                        <p style="color:var(--text-muted);">مدرس كيمياء بخبرة 15 عاماً</p>
+                <div class="card">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:50px; height:50px; border-radius:50%; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">👨‍🏫</div>
+                        <div><strong>مستر عبدالله خليل</strong><br><span style="color:var(--text-muted);">مدرس كيمياء</span></div>
                     </div>
                 </div>
-                <h3 style="margin-bottom:12px;">📖 المحاضرات</h3>
-                <div class="lesson-list">
+                <h3 style="margin:20px 0 12px;">📖 المحاضرات (${lessons.length})</h3>
+                <div>
                     ${lessons.length ? lessons.map((l, i) => `
-                        <a href="lesson.html?id=${l.id}" class="lesson-item" style="text-decoration:none; color:inherit;">
-                            <div style="display:flex; align-items:center;">
-                                <span class="icon">${l.video ? '🎬' : '📄'}</span>
-                                <span>${i+1}. ${l.title}</span>
-                            </div>
+                        <a href="lesson.html?id=${l.id}" class="lesson-item">
+                            <span>${l.video ? '🎬' : '📄'} ${i+1}. ${l.title}</span>
                             <span style="color:var(--text-muted);">▶</span>
                         </a>
-                    `).join('') : '<div class="empty-state">لا توجد محاضرات بعد</div>'}
-                </div>
-                <h3 style="margin-top:20px; margin-bottom:12px;">📄 ملفات PDF</h3>
-                <div class="lesson-list">
-                    ${lessons.filter(l => l.pdf).length ? lessons.filter(l => l.pdf).map(l => `
-                        <a href="${l.pdf}" target="_blank" class="lesson-item" style="text-decoration:none; color:inherit;">
-                            <span>📎 ${l.title} (PDF)</span>
-                        </a>
-                    `).join('') : '<div class="empty-state">لا توجد ملفات PDF مرفقة</div>'}
-                </div>
-                <h3 style="margin-top:20px; margin-bottom:12px;">📝 الواجبات</h3>
-                <div class="lesson-list">
-                    ${assignments.length ? assignments.map(a => `
-                        <a href="assignment.html?id=${a.id}" class="lesson-item" style="text-decoration:none; color:inherit;">
-                            <span>📋 ${a.desc || 'واجب'}</span>
-                        </a>
-                    `).join('') : '<div class="empty-state">لا توجد واجبات حالياً</div>'}
-                </div>
-                <h3 style="margin-top:20px; margin-bottom:12px;">📋 الامتحانات</h3>
-                <div class="lesson-list">
-                    ${exams.length ? exams.map(e => `
-                        <a href="exam.html?id=${e.id}" class="lesson-item" style="text-decoration:none; color:inherit;">
-                            <span>📝 ${e.name} (${e.time || 30} دقيقة)</span>
-                        </a>
-                    `).join('') : '<div class="empty-state">لا توجد امتحانات حالياً</div>'}
+                    `).join('') : '<div style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد محاضرات حالياً</div>'}
                 </div>
             `;
-        } catch(e) {
-            console.error(e);
-            container.innerHTML = '<div class="empty-state">❌ حدث خطأ أثناء تحميل بيانات الكورس</div>';
-        }
+        } catch(e) { container.innerHTML = '<div style="text-align:center;padding:60px;">❌ حدث خطأ</div>'; }
     }
 
     window.logout = () => { localStorage.clear(); window.location.href='login.html'; };
 
     // Mobile sidebar
-    document.getElementById('menuToggle').addEventListener('click', ()=>{
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('overlay').style.display = document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';
-    });
+    const menuToggle = document.getElementById('menuToggle');
+    if (menuToggle) {
+        menuToggle.style.display = window.innerWidth < 768 ? 'block' : 'none';
+        menuToggle.addEventListener('click', ()=>{
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('overlay').style.display = document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';
+        });
+    }
     document.getElementById('overlay').addEventListener('click', ()=>{
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').style.display = 'none';

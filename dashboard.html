@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم | مستر عبدالله خليل</title>
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
@@ -17,8 +16,6 @@
             --text-secondary: #b8b8d4;
             --text-muted: #6e6e90;
             --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
-            --accent-1: #4da8da;
-            --accent-2: #7c5ce7;
             --accent-3: #22d3bb;
             --shadow-glow: 0 0 80px rgba(124, 92, 231, 0.25);
             --radius-sm: 10px;
@@ -68,7 +65,8 @@
         .content { padding:24px; flex:1; display:flex; flex-direction:column; gap:20px; }
         .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
         .welcome-card { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
-        .avatar { width:64px; height:64px; border-radius:50%; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:2rem; color:#fff; }
+        .avatar-ring { width:64px; height:64px; border-radius:50%; padding:3px; background:var(--accent-gradient); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#fff; }
+        .avatar-ring img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
         .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
         .stat-card { text-align:center; padding:20px; }
         .stat-card .value { font-size:2rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -151,40 +149,26 @@
             const user = userDoc.data();
             const grade = user.grade || '';
 
-            // ✅ نجلب فقط الكورسات الخاصة بصف الطالب
+            // ✅ صورة الطالب من localStorage أولاً ثم من Firestore
+            const avatarUrl = localStorage.getItem('studentAvatar') || user.avatar || '';
+
+            // جلب الكورسات الخاصة بصف الطالب فقط
             let courses = [];
             try {
                 const snap = await db.collection('courses').where('grade', '==', grade).get();
                 snap.forEach(d => courses.push({id: d.id, ...d.data()}));
             } catch(e) {}
 
-            // عدد المحاضرات المرتبطة بهذه الكورسات
             let lessonsCount = 0;
-            if (courses.length > 0) {
-                const courseIds = courses.map(c => c.id);
-                // نستخدم استعلام متعدد (in) لكنه محدود بـ 10 عناصر، لذا نكرر
-                try {
-                    const snap = await db.collection('lessons').where('courseId', 'in', courseIds.slice(0,10)).get();
-                    lessonsCount = snap.size;
-                    // إذا كان هناك أكثر من 10 كورسات نضيف الباقي يدويًا (تبسيط)
-                } catch(e) {}
-            }
-
-            // الامتحانات التي قام بها الطالب (ستكون خاصة به وبالتالي مرتبطة بصفه)
+            try { lessonsCount = (await db.collection('lessons').get()).size; } catch(e) {}
             let examCount = 0;
-            try {
-                examCount = (await db.collection('examResults').where('studentId','==',studentId).get()).size;
-            } catch(e) {}
-
-            // الواجبات التي سلمها الطالب
+            try { examCount = (await db.collection('examResults').where('studentId','==',studentId).get()).size; } catch(e) {}
             let assignCount = 0;
-            try {
-                assignCount = (await db.collection('assignmentSubmissions').where('studentId','==',studentId).get()).size;
-            } catch(e) {}
+            try { assignCount = (await db.collection('assignmentSubmissions').where('studentId','==',studentId).get()).size; } catch(e) {}
 
             container.innerHTML = `
                 <div class="card welcome-card">
-                    <div class="avatar">👤</div>
+                    <div class="avatar-ring">${avatarUrl ? `<img src="${avatarUrl}" alt="صورة الطالب">` : '👤'}</div>
                     <div>
                         <h3>مرحباً، ${user.name || 'طالب'} 👋</h3>
                         <p style="color:var(--text-muted);">الصف: ${grade} | الحالة: <span style="color:var(--accent-3);">مفعل</span></p>

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الكورسات | مستر عبدالله خليل</title>
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
@@ -23,7 +22,7 @@
             --shadow-glow: 0 0 80px rgba(124, 92, 231, 0.25);
             --radius-sm: 10px;
             --radius-md: 16px;
-            --radius-lg: 20px;
+            --radius-lg: 24px;
             --font: 'Cairo', sans-serif;
             --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
         }
@@ -42,90 +41,92 @@
         .aurora .orb:nth-child(1){ width:700px; height:700px; background:#4da8da; top:-250px; left:-200px; }
         .aurora .orb:nth-child(2){ width:550px; height:550px; background:#7c5ce7; bottom:-200px; right:-180px; animation-delay:-10s; }
         @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(50px,-40px) scale(1.1);} 66%{transform:translate(-40px,50px) scale(0.9);} }
-        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto; }
+        .sidebar {
+            width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px);
+            border-left:1px solid var(--glass-border); padding:24px 14px; display:flex; flex-direction:column;
+            gap:4px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto;
+        }
         .sidebar .logo { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:20px; text-decoration:none; }
-        .sidebar .logo-icon { width:42px; height:42px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
+        .sidebar .logo-icon { width:42px; height:42px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; box-shadow:var(--shadow-glow); }
         .sidebar nav { display:flex; flex-direction:column; gap:2px; flex:1; }
-        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-secondary); text-decoration:none; font-weight:500; font-size:0.88rem; transition:var(--transition); cursor:pointer; }
+        .sidebar nav a {
+            display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px;
+            color:var(--text-secondary); text-decoration:none; font-weight:500; font-size:0.88rem; transition:var(--transition); cursor:pointer;
+        }
         .sidebar nav a:hover, .sidebar nav a.active { background:rgba(255,255,255,0.05); color:#fff; }
         .sidebar nav a.active { background:rgba(124,92,231,0.12); }
         .main { flex:1; display:flex; flex-direction:column; overflow-y:auto; max-height:100vh; position:relative; z-index:5; }
-        .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; z-index:20; }
+        .topbar {
+            padding:14px 24px; display:flex; justify-content:space-between; align-items:center;
+            background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border);
+            position:sticky; top:0; z-index:20;
+        }
         .topbar h2 { font-size:1.2rem; font-weight:700; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
         .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; transition:var(--transition); }
         .btn-primary { background:var(--accent-gradient); border:none; color:#fff; }
-        .content { padding:24px; flex:1; max-width:1200px; margin:0 auto; width:100%; }
-        .page-header { margin-bottom:24px; }
-        .page-header h2 { font-size:1.8rem; font-weight:700; }
-        .filter-bar { display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
-        .filter-bar select, .filter-bar input { padding:10px 16px; border-radius:30px; border:1.5px solid var(--glass-border); background:rgba(255,255,255,0.04); color:#fff; font-family:var(--font); font-size:0.9rem; outline:none; }
-        .courses-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px; }
-        .course-card {
-            background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg);
-            overflow:hidden; backdrop-filter:blur(10px); transition:var(--transition);
-            text-decoration:none; color:inherit; display:flex; flex-direction:column;
-        }
-        .course-card:hover { background:var(--glass-hover); transform:translateY(-5px); box-shadow:0 20px 40px rgba(0,0,0,0.4); }
-        .course-banner { height:140px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:3rem; position:relative; }
-        .course-banner img { width:100%; height:100%; object-fit:cover; }
-        .course-badge { position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.6); padding:4px 12px; border-radius:20px; font-size:0.7rem; font-weight:600; color:#fff; }
-        .course-info { padding:18px; flex:1; display:flex; flex-direction:column; gap:6px; }
-        .course-info h3 { font-size:1.1rem; font-weight:700; }
-        .course-info p { font-size:0.85rem; color:var(--text-secondary); }
+        .content { padding:24px; flex:1; display:flex; flex-direction:column; gap:20px; }
+        .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
+        .filter-bar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+        .filter-bar select { padding:10px 16px; border-radius:24px; border:1.5px solid var(--glass-border); background:rgba(255,255,255,0.04); color:#fff; font-family:var(--font); font-size:0.9rem; outline:none; }
+        .courses-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
+        .course-card { text-decoration:none; color:inherit; }
+        .course-card:hover { background:var(--glass-hover); transform:translateY(-3px); box-shadow:0 15px 30px rgba(0,0,0,0.3); }
+        .course-card .banner { height:120px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:2.5rem; position:relative; overflow:hidden; margin-bottom:12px; }
+        .course-card .banner img { width:100%; height:100%; object-fit:cover; position:absolute; }
+        .course-card .info h4 { font-size:1.1rem; font-weight:700; }
+        .course-card .info p { font-size:0.85rem; color:var(--text-secondary); }
         .course-meta { display:flex; gap:14px; margin-top:8px; font-size:0.78rem; color:var(--text-muted); }
-        .progress-bar { height:5px; background:rgba(255,255,255,0.08); border-radius:8px; margin-top:10px; overflow:hidden; }
-        .progress-fill { height:100%; background:var(--accent-gradient); border-radius:8px; width:0%; }
-        .empty-state { text-align:center; padding:60px; color:var(--text-muted); }
+        .badge { padding:4px 10px; border-radius:14px; font-size:0.7rem; font-weight:600; background:rgba(0,0,0,0.5); color:#fff; }
+        .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
         .menu-toggle { display:none; background:none; border:none; color:#fff; font-size:1.6rem; cursor:pointer; }
+        .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; }
         @media (max-width:768px) {
             .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; }
             .sidebar.open { right:0; }
+            .overlay.show { display:block; }
             .menu-toggle { display:block; }
-            .courses-grid { grid-template-columns:1fr; }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="aurora"><div class="orb"></div><div class="orb"></div></div>
-<div class="overlay" id="overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40;"></div>
+<div class="overlay" id="overlay"></div>
+
 <aside class="sidebar" id="sidebar">
-    <a href="index.html" class="logo"><div class="logo-icon">ع</div><span>لوحة التحكم</span></a>
+    <a href="index.html" class="logo">
+        <div class="logo-icon">ع</div>
+        <span style="font-weight:700;color:#fff;">لوحة التحكم<small style="display:block;font-size:0.65rem;color:var(--text-muted);">مستر عبدالله خليل</small></span>
+    </a>
     <nav>
         <a href="dashboard.html">🏠 الرئيسية</a>
         <a href="courses.html" class="active">📚 كورساتي</a>
+        <a href="books.html">📖 الكتب</a>
         <a href="exams.html">📝 الامتحانات</a>
         <a href="results.html">📊 نتائجي</a>
+        <a href="notifications.html">🔔 الإشعارات</a>
+        <a href="subscriptions.html">💎 الاشتراك</a>
+        <a href="payment.html">💳 الدفع</a>
         <a href="profile.html">👤 حسابي</a>
         <a href="settings.html">⚙️ الإعدادات</a>
     </nav>
 </aside>
+
 <div class="main">
     <div class="topbar">
         <button class="menu-toggle" id="menuToggle">☰</button>
         <h2>📚 الكورسات</h2>
-        <div><a href="index.html" class="btn btn-sm">الموقع</a> <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button></div>
+        <div>
+            <a href="index.html" class="btn btn-sm">الموقع</a>
+            <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button>
+        </div>
     </div>
-    <div class="content">
-        <div class="page-header">
-            <h2>جميع الكورسات</h2>
-            <p style="color:var(--text-muted);">اختر الصف وابدأ التعلم</p>
-        </div>
-        <div class="filter-bar">
-            <select id="gradeFilter" onchange="filterCourses()">
-                <option value="">كل الصفوف</option>
-                <option>الأول الثانوي</option>
-                <option>الثاني الثانوي</option>
-                <option>الثالث الثانوي</option>
-            </select>
-            <input type="text" id="searchInput" placeholder="🔍 بحث عن كورس..." oninput="filterCourses()" style="width:250px;">
-        </div>
-        <div class="courses-grid" id="coursesGrid"></div>
+    <div class="content" id="coursesContent">
+        <div class="empty-state">⏳ جاري تحميل الكورسات...</div>
     </div>
 </div>
 
 <script>
-(function() {
     const firebaseConfig = {
         apiKey: "AIzaSyDT0xGqGHzyyeB4qcz5AGMKxESCGZNNEWE",
         authDomain: "abdullah-khalil.firebaseapp.com",
@@ -137,70 +138,98 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let allCourses = [];
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) { window.location.href = 'login.html'; }
 
-    async function loadCourses() {
-        const grid = document.getElementById('coursesGrid');
+    let allCourses = [];
+    let currentGrade = '';
+
+    async function init() {
+        const container = document.getElementById('coursesContent');
         try {
-            const snap = await db.collection('courses').orderBy('createdAt', 'desc').get();
+            const userDoc = await db.collection('students').doc(studentId).get();
+            if (!userDoc.exists || userDoc.data().status !== 'مفعل') {
+                localStorage.clear(); window.location.href='login.html'; return;
+            }
+            const user = userDoc.data();
+            currentGrade = user.grade || '';
+
+            // جلب جميع الكورسات
+            const snap = await db.collection('courses').get();
             allCourses = [];
             snap.forEach(doc => allCourses.push({ id: doc.id, ...doc.data() }));
-            renderCourses(allCourses);
-        } catch (e) {
+
+            renderPage();
+        } catch(e) {
             console.error(e);
-            grid.innerHTML = '<div class="empty-state">❌ تعذر تحميل الكورسات</div>';
+            container.innerHTML = '<div class="empty-state">❌ حدث خطأ في تحميل البيانات. تأكد من قواعد Firestore.</div>';
         }
     }
 
-    function renderCourses(courses) {
-        const grid = document.getElementById('coursesGrid');
-        if (!courses.length) {
-            grid.innerHTML = '<div class="empty-state">لا توجد كورسات متاحة حالياً</div>';
-            return;
-        }
-        grid.innerHTML = courses.map(c => `
-            <a href="course.html?id=${c.id}" class="course-card">
-                <div class="course-banner" style="${c.banner ? `background-image:url(${c.banner}); background-size:cover;` : ''}">
-                    ${!c.banner ? '📚' : ''}
-                    <span class="course-badge">${c.type || 'مجاني'}</span>
-                </div>
-                <div class="course-info">
-                    <h3>${c.name}</h3>
-                    <p>${c.grade || ''}</p>
-                    <div class="course-meta">
-                        <span>🎬 ${c.lessonsCount || 0} محاضرة</span>
-                        <span>📝 ${c.examsCount || 0} امتحان</span>
-                        <span>📄 ${c.pdfsCount || 0} PDF</span>
-                    </div>
-                    <div class="progress-bar"><div class="progress-fill" style="width:${Math.floor(Math.random()*60)+20}%"></div></div>
-                </div>
-            </a>
-        `).join('');
+    function renderPage(filterGrade = currentGrade) {
+        const container = document.getElementById('coursesContent');
+        const filtered = filterGrade ? allCourses.filter(c => c.grade === filterGrade) : allCourses;
+
+        container.innerHTML = `
+            <div class="filter-bar">
+                <label style="color:var(--text-secondary);">الصف الدراسي:</label>
+                <select id="gradeFilter" onchange="filterCourses()">
+                    <option value="">جميع الصفوف</option>
+                    <option value="الأول الثانوي" ${filterGrade === 'الأول الثانوي' ? 'selected' : ''}>الأول الثانوي</option>
+                    <option value="الثاني الثانوي" ${filterGrade === 'الثاني الثانوي' ? 'selected' : ''}>الثاني الثانوي</option>
+                    <option value="الثالث الثانوي" ${filterGrade === 'الثالث الثانوي' ? 'selected' : ''}>الثالث الثانوي</option>
+                </select>
+            </div>
+            <div class="courses-grid">
+                ${filtered.length ? filtered.map(c => `
+                    <a href="course.html?id=${c.id}" class="card course-card">
+                        <div class="banner">
+                            ${c.banner ? `<img src="${c.banner}" alt="${c.name}">` : '📚'}
+                            <span class="badge" style="position:absolute; top:8px; left:8px;">${c.type || 'مجاني'}</span>
+                        </div>
+                        <div class="info">
+                            <h4>${c.name}</h4>
+                            <p>${c.grade || ''}</p>
+                            <div class="course-meta">
+                                <span>🎬 ${c.lessonsCount || 0} محاضرة</span>
+                                <span>📝 ${c.examsCount || 0} امتحان</span>
+                                <span>📄 ${c.pdfsCount || 0} PDF</span>
+                            </div>
+                        </div>
+                    </a>
+                `).join('') : '<div class="empty-state">لا توجد كورسات متاحة لهذا الصف</div>'}
+            </div>
+        `;
     }
 
     window.filterCourses = function() {
         const grade = document.getElementById('gradeFilter').value;
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        let filtered = allCourses;
-        if (grade) filtered = filtered.filter(c => c.grade === grade);
-        if (search) filtered = filtered.filter(c => c.name.toLowerCase().includes(search));
-        renderCourses(filtered);
+        renderPage(grade);
     };
 
-    window.logout = () => { localStorage.clear(); window.location.href='login.html'; };
+    window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
 
-    // Mobile sidebar
-    document.getElementById('menuToggle').addEventListener('click', ()=>{
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('overlay').style.display = document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';
+    // Mobile sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
     });
-    document.getElementById('overlay').addEventListener('click', ()=>{
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('overlay').style.display = 'none';
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+    });
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            }
+        });
     });
 
-    loadCourses();
-})();
+    init();
 </script>
 </body>
 </html>

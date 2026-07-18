@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الملف الشخصي | مستر عبدالله خليل</title>
-    <!-- Firebase + Cloudinary -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
@@ -49,7 +48,7 @@
             gap:4px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto;
         }
         .sidebar .logo { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:20px; text-decoration:none; }
-        .sidebar .logo-icon { width:42px; height:42px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
+        .sidebar .logo-icon { width:42px; height:42px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; box-shadow:var(--shadow-glow); }
         .sidebar nav { display:flex; flex-direction:column; gap:2px; flex:1; }
         .sidebar nav a {
             display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px;
@@ -69,12 +68,13 @@
         .content { padding:24px; flex:1; display:flex; flex-direction:column; gap:20px; max-width:900px; margin:0 auto; width:100%; }
         .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
         .profile-header { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-        .avatar-ring { width:90px; height:90px; border-radius:50%; padding:3px; background:var(--accent-gradient); flex-shrink:0; position:relative; }
+        .avatar-wrapper { position:relative; display:inline-block; }
+        .avatar-ring { width:90px; height:90px; border-radius:50%; padding:3px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; }
         .avatar-ring img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
-        .avatar-upload {
-            position:absolute; bottom:0; left:0; background:var(--accent-gradient); border-radius:50%;
-            width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;
-            color:#fff; font-size:0.9rem; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.4);
+        .avatar-upload-btn {
+            position:absolute; bottom:0; left:0; background:var(--accent-gradient); border:none;
+            width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+            cursor:pointer; color:#fff; font-size:0.9rem; box-shadow:0 4px 12px rgba(0,0,0,0.5);
         }
         .badge { padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:600; }
         .badge-success { background:rgba(34,211,187,0.2); color:#22d3bb; }
@@ -87,7 +87,7 @@
         .table-wrapper { overflow-x:auto; }
         table { width:100%; border-collapse:collapse; font-size:0.82rem; }
         th, td { padding:10px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); }
-        th { color:var(--text-muted); font-weight:600; font-size:0.7rem; text-transform:uppercase; }
+        th { color:var(--text-muted); font-weight:600; font-size:0.7rem; }
         .empty-state { text-align:center; padding:30px; color:var(--text-muted); }
         .menu-toggle { display:none; background:none; border:none; color:#fff; font-size:1.6rem; cursor:pointer; }
         .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; }
@@ -160,6 +160,9 @@
             const user = userDoc.data();
             const grade = user.grade || '';
 
+            // الصورة من localStorage أولاً (للتحديث الفوري)
+            const avatarUrl = localStorage.getItem('studentAvatar') || user.avatar || '';
+
             // إحصائيات
             let coursesCount = 0, examResults = [], assignments = [];
             try { coursesCount = (await db.collection('courses').where('grade','==',grade).get()).size; } catch(e){}
@@ -175,10 +178,10 @@
             const avgScore = examResults.length ? Math.round(examResults.reduce((a,b)=>a+(b.percentage||0),0)/examResults.length) : 0;
 
             container.innerHTML = `
-            <div class="card profile-header" style="position:relative;">
-                <div style="position:relative;">
-                    <div class="avatar-ring">${user.avatar ? `<img src="${user.avatar}" alt="">` : '👤'}</div>
-                    <button class="avatar-upload" onclick="uploadAvatar()" title="تغيير الصورة">📷</button>
+            <div class="card profile-header">
+                <div class="avatar-wrapper">
+                    <div class="avatar-ring">${avatarUrl ? `<img src="${avatarUrl}" alt="صورة الطالب">` : '👤'}</div>
+                    <button class="avatar-upload-btn" onclick="uploadAvatar()" title="تغيير الصورة">📷</button>
                 </div>
                 <div style="flex:1;">
                     <h2>${user.name || 'طالب'}</h2>
@@ -215,6 +218,7 @@
     }
     loadProfile();
 
+    // ✅ دالة رفع الصورة مع تحديث localStorage
     window.uploadAvatar = function() {
         window.cloudinary.openUploadWidget({
             cloudName: CLOUDINARY_CLOUD, uploadPreset: CLOUDINARY_PRESET, apiKey: CLOUDINARY_KEY,
@@ -223,7 +227,11 @@
         }, async (error, result) => {
             if (!error && result?.event === 'success') {
                 const url = result.info.secure_url;
+                // تحديث Firestore
                 await db.collection('students').doc(studentId).update({ avatar: url });
+                // ✅ تحديث localStorage فوراً
+                localStorage.setItem('studentAvatar', url);
+                // إعادة تحميل الصفحة لتظهر الصورة الجديدة
                 loadProfile();
             }
         });

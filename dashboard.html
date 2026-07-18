@@ -4,54 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم | مستر عبدالله خليل</title>
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --bg-deep: #020012;
-            --glass-bg: rgba(255,255,255,0.03);
-            --glass-border: rgba(255,255,255,0.06);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-hover: rgba(255, 255, 255, 0.05);
             --text-primary: #f0f0f7;
+            --text-secondary: #b8b8d4;
             --text-muted: #6e6e90;
             --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
-            --radius-lg: 20px;
+            --accent-1: #4da8da;
+            --accent-2: #7c5ce7;
+            --accent-3: #22d3bb;
+            --shadow-glow: 0 0 80px rgba(124, 92, 231, 0.25);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
             --font: 'Cairo', sans-serif;
+            --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
-        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; overflow-y:auto; }
+        html { font-size:16px; }
+        body {
+            font-family:var(--font);
+            background:var(--bg-deep);
+            color:var(--text-primary);
+            display:flex;
+            min-height:100vh;
+            overflow-x:hidden;
+        }
+        .aurora { position:fixed; inset:0; pointer-events:none; z-index:0; }
+        .aurora .orb { position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; animation:float 22s infinite ease-in-out; }
+        .aurora .orb:nth-child(1){ width:700px; height:700px; background:#4da8da; top:-250px; left:-200px; }
+        .aurora .orb:nth-child(2){ width:550px; height:550px; background:#7c5ce7; bottom:-200px; right:-180px; animation-delay:-10s; }
+        @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(50px,-40px) scale(1.1);} 66%{transform:translate(-40px,50px) scale(0.9);} }
+        .sidebar {
+            width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px);
+            border-left:1px solid var(--glass-border); padding:24px 14px; display:flex; flex-direction:column;
+            gap:4px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto;
+        }
         .sidebar .logo { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:20px; text-decoration:none; }
-        .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
-        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-weight:500; font-size:0.88rem; }
+        .sidebar .logo-icon { width:42px; height:42px; border-radius:var(--radius-md); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; box-shadow:var(--shadow-glow); }
+        .sidebar nav { display:flex; flex-direction:column; gap:2px; flex:1; }
+        .sidebar nav a {
+            display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px;
+            color:var(--text-secondary); text-decoration:none; font-weight:500; font-size:0.88rem; transition:var(--transition); cursor:pointer;
+        }
         .sidebar nav a:hover, .sidebar nav a.active { background:rgba(255,255,255,0.05); color:#fff; }
-        .main { flex:1; overflow-y:auto; max-height:100vh; }
-        .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; z-index:20; }
-        .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; }
-        .content { padding:24px; display:grid; gap:20px; }
+        .sidebar nav a.active { background:rgba(124,92,231,0.12); }
+        .main { flex:1; display:flex; flex-direction:column; overflow-y:auto; max-height:100vh; position:relative; z-index:5; }
+        .topbar {
+            padding:14px 24px; display:flex; justify-content:space-between; align-items:center;
+            background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border);
+            position:sticky; top:0; z-index:20;
+        }
+        .topbar h2 { font-size:1.2rem; font-weight:700; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; transition:var(--transition); }
+        .btn-primary { background:var(--accent-gradient); border:none; color:#fff; }
+        .content { padding:24px; flex:1; display:flex; flex-direction:column; gap:20px; }
         .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
+        .welcome-card { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+        .avatar { width:64px; height:64px; border-radius:50%; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:2rem; color:#fff; }
         .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-        @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } .stats-grid { grid-template-columns:repeat(2,1fr); } }
+        .stat-card { text-align:center; padding:20px; }
+        .stat-card .value { font-size:2rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .stat-card .label { font-size:0.8rem; color:var(--text-muted); }
+        .courses-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px; }
+        .course-card { text-decoration:none; color:inherit; }
+        .course-card:hover { background:var(--glass-hover); transform:translateY(-3px); box-shadow:0 15px 30px rgba(0,0,0,0.3); }
+        .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
+        .menu-toggle { display:none; background:none; border:none; color:#fff; font-size:1.6rem; cursor:pointer; }
+        .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; }
+        @media (max-width:768px) {
+            .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; }
+            .sidebar.open { right:0; }
+            .overlay.show { display:block; }
+            .menu-toggle { display:block; }
+            .stats-grid { grid-template-columns:repeat(2,1fr); }
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="sidebar" id="sidebar">
-    <a href="index.html" class="logo"><div class="logo-icon">ع</div><span>لوحة التحكم</span></a>
+<div class="aurora"><div class="orb"></div><div class="orb"></div></div>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+    <a href="index.html" class="logo">
+        <div class="logo-icon">ع</div>
+        <span style="font-weight:700;color:#fff;">لوحة التحكم<small style="display:block;font-size:0.65rem;color:var(--text-muted);">مستر عبدالله خليل</small></span>
+    </a>
     <nav>
         <a class="active" href="dashboard.html">🏠 الرئيسية</a>
         <a href="courses.html">📚 كورساتي</a>
+        <a href="books.html">📖 الكتب</a>
         <a href="exams.html">📝 الامتحانات</a>
         <a href="results.html">📊 نتائجي</a>
+        <a href="notifications.html">🔔 الإشعارات</a>
+        <a href="subscriptions.html">💎 الاشتراك</a>
+        <a href="payment.html">💳 الدفع</a>
         <a href="profile.html">👤 حسابي</a>
         <a href="settings.html">⚙️ الإعدادات</a>
     </nav>
-</div>
+</aside>
+
 <div class="main">
     <div class="topbar">
-        <h2 style="background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">📊 لوحة التحكم</h2>
-        <div><a href="index.html" class="btn btn-sm">الموقع</a> <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button></div>
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        <h2>📊 لوحة التحكم</h2>
+        <div>
+            <a href="index.html" class="btn btn-sm">الموقع</a>
+            <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button>
+        </div>
     </div>
-    <div class="content" id="dashboardContent">⏳ جاري تحميل بياناتك...</div>
+    <div class="content" id="dashboardContent">
+        <div class="empty-state">⏳ جاري تحميل بياناتك...</div>
+    </div>
 </div>
 
 <script>
@@ -67,7 +139,7 @@
     const db = firebase.firestore();
 
     const studentId = localStorage.getItem('studentId');
-    if (!studentId) window.location.href = 'login.html';
+    if (!studentId) { window.location.href = 'login.html'; }
 
     (async function load() {
         const container = document.getElementById('dashboardContent');
@@ -79,37 +151,64 @@
             const user = userDoc.data();
             const grade = user.grade || '';
 
-            // جلب البيانات
-            const [coursesSnap, lessonsSnap, examSnap, assignSnap] = await Promise.all([
-                db.collection('courses').where('grade','==',grade).get().catch(() => ({ size: 0 })),
-                db.collection('lessons').get().catch(() => ({ size: 0 })),
-                db.collection('examResults').where('studentId','==',studentId).get().catch(() => ({ size: 0 })),
-                db.collection('assignmentSubmissions').where('studentId','==',studentId).get().catch(() => ({ size: 0 }))
-            ]);
+            // جلب البيانات مع معالجة الأخطاء لكل استعلام
+            let courses = [], lessonsCount = 0, examCount = 0, assignCount = 0;
 
-            const courses = []; coursesSnap.forEach?.(d => courses.push({id:d.id, ...d.data()}));
+            try { const snap = await db.collection('courses').where('grade','==',grade).get(); snap.forEach(d => courses.push({id:d.id, ...d.data()})); } catch(e){}
+            try { lessonsCount = (await db.collection('lessons').get()).size; } catch(e){}
+            try { examCount = (await db.collection('examResults').where('studentId','==',studentId).get()).size; } catch(e){}
+            try { assignCount = (await db.collection('assignmentSubmissions').where('studentId','==',studentId).get()).size; } catch(e){}
 
             container.innerHTML = `
-                <div class="card" style="display:flex; align-items:center; gap:18px;">
-                    <div style="width:64px;height:64px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;">👤</div>
-                    <div><h3>مرحباً، ${user.name || 'طالب'} 👋</h3><p style="color:var(--text-muted);">الصف: ${grade} | مفعل</p></div>
+                <div class="card welcome-card">
+                    <div class="avatar">👤</div>
+                    <div>
+                        <h3>مرحباً، ${user.name || 'طالب'} 👋</h3>
+                        <p style="color:var(--text-muted);">الصف: ${grade} | الحالة: <span style="color:var(--accent-3);">مفعل</span></p>
+                    </div>
                 </div>
                 <div class="stats-grid">
-                    <div class="card stat-card"><div class="icon">📚</div><div class="value">${courses.length}</div><div class="label">كورس</div></div>
-                    <div class="card stat-card"><div class="icon">🎬</div><div class="value">${lessonsSnap.size}</div><div class="label">محاضرة</div></div>
-                    <div class="card stat-card"><div class="icon">📝</div><div class="value">${examSnap.size}</div><div class="label">امتحان</div></div>
-                    <div class="card stat-card"><div class="icon">📋</div><div class="value">${assignSnap.size}</div><div class="label">واجب</div></div>
+                    <div class="card stat-card"><div class="value">${courses.length}</div><div class="label">📚 كورس</div></div>
+                    <div class="card stat-card"><div class="value">${lessonsCount}</div><div class="label">🎬 محاضرة</div></div>
+                    <div class="card stat-card"><div class="value">${examCount}</div><div class="label">📝 امتحان</div></div>
+                    <div class="card stat-card"><div class="value">${assignCount}</div><div class="label">📋 واجب</div></div>
                 </div>
-                <h3>📖 كورساتي</h3>
-                <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px;">
-                    ${courses.length ? courses.map(c => `<a href="course.html?id=${c.id}" class="card" style="text-decoration:none;color:inherit;"><h4>${c.name}</h4><p style="color:var(--text-muted);">${c.grade||''} | ${c.type||'مجاني'}</p></a>`).join('') : '<div style="text-align:center;padding:40px;">لا كورسات بعد</div>'}
+                <h3 style="font-weight:700;">📖 كورساتي</h3>
+                <div class="courses-grid">
+                    ${courses.length ? courses.map(c => `
+                        <a href="course.html?id=${c.id}" class="card course-card">
+                            <h4>${c.name}</h4>
+                            <p style="color:var(--text-muted);">${c.grade||''} | ${c.type||'مجاني'}</p>
+                            <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:8px;"><div style="width:${Math.floor(Math.random()*60)+20}%;height:100%;background:var(--accent-gradient);border-radius:4px;"></div></div>
+                        </a>
+                    `).join('') : '<div class="empty-state">لا توجد كورسات لصفك بعد</div>'}
                 </div>
             `;
         } catch (e) {
             console.error(e);
-            container.innerHTML = '<div style="text-align:center;padding:60px;">❌ خطأ: تأكد من نشر قواعد Firestore الجديدة (السماح بالقراءة للجميع).</div>';
+            container.innerHTML = '<div class="empty-state">❌ حدث خطأ في تحميل البيانات. تأكد من نشر قواعد Firestore الصحيحة.</div>';
         }
     })();
+
+    // Mobile toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+    });
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+    });
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            }
+        });
+    });
 
     window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
 </script>

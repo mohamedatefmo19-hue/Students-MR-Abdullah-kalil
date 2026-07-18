@@ -22,20 +22,14 @@
         .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; overflow-y:auto; }
         .sidebar .logo { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:20px; text-decoration:none; }
         .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
-        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-weight:500; font-size:0.88rem; transition:0.3s; }
+        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-weight:500; font-size:0.88rem; }
         .sidebar nav a:hover, .sidebar nav a.active { background:rgba(255,255,255,0.05); color:#fff; }
         .main { flex:1; overflow-y:auto; max-height:100vh; }
         .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; z-index:20; }
-        .topbar h2 { background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
         .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; }
         .content { padding:24px; display:grid; gap:20px; }
         .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
         .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-        .stat-card { text-align:center; padding:24px 16px; }
-        .stat-card .icon { font-size:1.8rem; }
-        .stat-card .value { font-size:1.8rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .stat-card .label { font-size:0.75rem; color:var(--text-muted); }
-        .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
         @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } .stats-grid { grid-template-columns:repeat(2,1fr); } }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -54,11 +48,8 @@
 </div>
 <div class="main">
     <div class="topbar">
-        <h2>📊 لوحة التحكم</h2>
-        <div>
-            <a href="index.html" class="btn btn-sm">الموقع</a>
-            <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button>
-        </div>
+        <h2 style="background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">📊 لوحة التحكم</h2>
+        <div><a href="index.html" class="btn btn-sm">الموقع</a> <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button></div>
     </div>
     <div class="content" id="dashboardContent">⏳ جاري تحميل بياناتك...</div>
 </div>
@@ -76,42 +67,27 @@
     const db = firebase.firestore();
 
     const studentId = localStorage.getItem('studentId');
-    if (!studentId) {
-        window.location.href = 'login.html';
-    }
+    if (!studentId) window.location.href = 'login.html';
 
     (async function load() {
         const container = document.getElementById('dashboardContent');
         try {
-            // جلب بيانات الطالب
             const userDoc = await db.collection('students').doc(studentId).get();
             if (!userDoc.exists || userDoc.data().status !== 'مفعل') {
-                localStorage.clear();
-                window.location.href = 'login.html';
-                return;
+                localStorage.clear(); window.location.href='login.html'; return;
             }
             const user = userDoc.data();
             const grade = user.grade || '';
 
-            // استعلامات مستقلة (عشان لو مجموعة مش موجودة ميحصلش خطأ عام)
-            let courses = [], lessonsCount = 0, examCount = 0, assignCount = 0;
+            // جلب البيانات
+            const [coursesSnap, lessonsSnap, examSnap, assignSnap] = await Promise.all([
+                db.collection('courses').where('grade','==',grade).get().catch(() => ({ size: 0 })),
+                db.collection('lessons').get().catch(() => ({ size: 0 })),
+                db.collection('examResults').where('studentId','==',studentId).get().catch(() => ({ size: 0 })),
+                db.collection('assignmentSubmissions').where('studentId','==',studentId).get().catch(() => ({ size: 0 }))
+            ]);
 
-            try {
-                const snap = await db.collection('courses').where('grade', '==', grade).get();
-                snap.forEach(d => courses.push({ id: d.id, ...d.data() }));
-            } catch (e) { console.warn('courses collection not ready'); }
-
-            try {
-                lessonsCount = (await db.collection('lessons').get()).size;
-            } catch (e) { console.warn('lessons collection not ready'); }
-
-            try {
-                examCount = (await db.collection('examResults').where('studentId', '==', studentId).get()).size;
-            } catch (e) { console.warn('examResults collection not ready'); }
-
-            try {
-                assignCount = (await db.collection('assignmentSubmissions').where('studentId', '==', studentId).get()).size;
-            } catch (e) { console.warn('assignmentSubmissions collection not ready'); }
+            const courses = []; coursesSnap.forEach?.(d => courses.push({id:d.id, ...d.data()}));
 
             container.innerHTML = `
                 <div class="card" style="display:flex; align-items:center; gap:18px;">
@@ -119,47 +95,23 @@
                     <div><h3>مرحباً، ${user.name || 'طالب'} 👋</h3><p style="color:var(--text-muted);">الصف: ${grade} | مفعل</p></div>
                 </div>
                 <div class="stats-grid">
-                    <div class="card stat-card"><div class="icon">📚</div><div class="value">${courses.length}</div><div class="label">كورس مسجل</div></div>
-                    <div class="card stat-card"><div class="icon">🎬</div><div class="value">${lessonsCount}</div><div class="label">محاضرة</div></div>
-                    <div class="card stat-card"><div class="icon">📝</div><div class="value">${examCount}</div><div class="label">امتحان</div></div>
-                    <div class="card stat-card"><div class="icon">📋</div><div class="value">${assignCount}</div><div class="label">واجب</div></div>
+                    <div class="card stat-card"><div class="icon">📚</div><div class="value">${courses.length}</div><div class="label">كورس</div></div>
+                    <div class="card stat-card"><div class="icon">🎬</div><div class="value">${lessonsSnap.size}</div><div class="label">محاضرة</div></div>
+                    <div class="card stat-card"><div class="icon">📝</div><div class="value">${examSnap.size}</div><div class="label">امتحان</div></div>
+                    <div class="card stat-card"><div class="icon">📋</div><div class="value">${assignSnap.size}</div><div class="label">واجب</div></div>
                 </div>
                 <h3>📖 كورساتي</h3>
                 <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px;">
-                    ${courses.length ? courses.map(c => `<a href="course.html?id=${c.id}" class="card" style="text-decoration:none;color:inherit;"><h4>${c.name}</h4><p style="color:var(--text-muted);">${c.grade||''} | ${c.type||'مجاني'}</p></a>`).join('') : '<div class="empty-state">لا كورسات بعد</div>'}
+                    ${courses.length ? courses.map(c => `<a href="course.html?id=${c.id}" class="card" style="text-decoration:none;color:inherit;"><h4>${c.name}</h4><p style="color:var(--text-muted);">${c.grade||''} | ${c.type||'مجاني'}</p></a>`).join('') : '<div style="text-align:center;padding:40px;">لا كورسات بعد</div>'}
                 </div>
             `;
         } catch (e) {
             console.error(e);
-            container.innerHTML = '<div class="empty-state">❌ خطأ: تأكد من تحديث قواعد Firestore (السماح بالقراءة للجميع).</div>';
+            container.innerHTML = '<div style="text-align:center;padding:60px;">❌ خطأ: تأكد من نشر قواعد Firestore الجديدة (السماح بالقراءة للجميع).</div>';
         }
     })();
 
     window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
-
-    // Mobile sidebar toggle
-    document.addEventListener('DOMContentLoaded', () => {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        if (!overlay) {
-            const div = document.createElement('div');
-            div.id = 'overlay'; div.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:40;';
-            document.body.appendChild(div);
-        }
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'menu-toggle';
-        toggleBtn.style.cssText = 'display:none;background:none;border:none;color:#fff;font-size:1.6rem;cursor:pointer;';
-        toggleBtn.innerHTML = '☰';
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-            document.getElementById('overlay').classList.toggle('show');
-        });
-        document.querySelector('.topbar').prepend(toggleBtn);
-        document.getElementById('overlay').addEventListener('click', () => {
-            sidebar.classList.remove('open');
-            document.getElementById('overlay').classList.remove('show');
-        });
-    });
 </script>
 </body>
 </html>

@@ -5,33 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم | مستر عبدالله خليل</title>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { --bg-deep: #020012; --glass: rgba(255,255,255,0.025); --glass-border: rgba(255,255,255,0.06); --glass-hover: rgba(255,255,255,0.05); --text-primary: #f0f0f8; --text-muted: #6e6e8a; --accent-gradient: linear-gradient(135deg, #4da8da 0%, #7c5ce7 50%, #22d3bb 100%); --radius-lg: 20px; --font: 'Cairo', sans-serif; }
+        :root {
+            --bg-deep: #020012;
+            --glass-bg: rgba(255,255,255,0.03);
+            --glass-border: rgba(255,255,255,0.06);
+            --text-primary: #f0f0f7;
+            --text-muted: #6e6e90;
+            --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
+            --radius-lg: 20px;
+            --font: 'Cairo', sans-serif;
+        }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
-        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; transition:transform 0.4s; overflow-y:auto; }
+        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; overflow-y:auto; }
         .sidebar .logo { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:20px; text-decoration:none; }
         .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
-        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-weight:500; font-size:0.88rem; transition:0.3s; cursor:pointer; }
+        .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-weight:500; font-size:0.88rem; transition:0.3s; }
         .sidebar nav a:hover, .sidebar nav a.active { background:rgba(255,255,255,0.05); color:#fff; }
         .main { flex:1; overflow-y:auto; max-height:100vh; }
         .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; z-index:20; }
         .topbar h2 { background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
         .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; }
-        .content { padding:24px; }
-        .welcome-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:24px; display:flex; align-items:center; gap:20px; margin-bottom:24px; }
-        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
-        .stat-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:18px; text-align:center; }
-        .courses-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:14px; }
-        .course-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:var(--radius-lg); overflow:hidden; text-decoration:none; color:inherit; display:block; }
-        .course-card:hover { background:var(--glass-hover); }
-        .course-card .banner { height:110px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:2rem; }
-        .course-card .info { padding:16px; }
-        @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } .stats-row { grid-template-columns:repeat(2,1fr); } }
+        .content { padding:24px; display:grid; gap:20px; }
+        .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
+        .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+        .stat-card { text-align:center; padding:24px 16px; }
+        .stat-card .icon { font-size:1.8rem; }
+        .stat-card .value { font-size:1.8rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .stat-card .label { font-size:0.75rem; color:var(--text-muted); }
+        .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
+        @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } .stats-grid { grid-template-columns:repeat(2,1fr); } }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="sidebar" id="sidebar">
@@ -53,7 +60,7 @@
             <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button>
         </div>
     </div>
-    <div class="content" id="dashboardContent">⏳ جاري التحميل...</div>
+    <div class="content" id="dashboardContent">⏳ جاري تحميل بياناتك...</div>
 </div>
 
 <script>
@@ -66,70 +73,92 @@
         appId: "1:530661483867:web:e2f165e9f808bcfcb8267e"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ننتظر تحقق حالة المستخدم
-    auth.onAuthStateChanged(async (user) => {
-        const studentId = user ? user.uid : localStorage.getItem('studentId');
-        if (!studentId) {
-            window.location.href = 'login.html';
-            return;
-        }
-        // إذا لم يكن user موجوداً (انتهت جلسة Auth) نعتمد على localStorage فقط
-        loadDashboard(studentId);
-    });
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) {
+        window.location.href = 'login.html';
+    }
 
-    async function loadDashboard(studentId) {
+    (async function load() {
         const container = document.getElementById('dashboardContent');
         try {
+            // جلب بيانات الطالب
             const userDoc = await db.collection('students').doc(studentId).get();
             if (!userDoc.exists || userDoc.data().status !== 'مفعل') {
                 localStorage.clear();
-                auth.signOut();
                 window.location.href = 'login.html';
                 return;
             }
             const user = userDoc.data();
             const grade = user.grade || '';
-            const [coursesSnap, lessonsSnap, examSnap, assignSnap] = await Promise.all([
-                db.collection('courses').where('grade', '==', grade).get(),
-                db.collection('lessons').get(),
-                db.collection('examResults').where('studentId', '==', studentId).get(),
-                db.collection('assignmentSubmissions').where('studentId', '==', studentId).get()
-            ]);
-            const courses = [];
-            coursesSnap.forEach(d => courses.push({ id: d.id, ...d.data() }));
+
+            // استعلامات مستقلة (عشان لو مجموعة مش موجودة ميحصلش خطأ عام)
+            let courses = [], lessonsCount = 0, examCount = 0, assignCount = 0;
+
+            try {
+                const snap = await db.collection('courses').where('grade', '==', grade).get();
+                snap.forEach(d => courses.push({ id: d.id, ...d.data() }));
+            } catch (e) { console.warn('courses collection not ready'); }
+
+            try {
+                lessonsCount = (await db.collection('lessons').get()).size;
+            } catch (e) { console.warn('lessons collection not ready'); }
+
+            try {
+                examCount = (await db.collection('examResults').where('studentId', '==', studentId).get()).size;
+            } catch (e) { console.warn('examResults collection not ready'); }
+
+            try {
+                assignCount = (await db.collection('assignmentSubmissions').where('studentId', '==', studentId).get()).size;
+            } catch (e) { console.warn('assignmentSubmissions collection not ready'); }
 
             container.innerHTML = `
-                <div class="welcome-card"><h3>مرحباً ${user.name || 'طالب'} 👋</h3><span>الصف: ${grade}</span></div>
-                <div class="stats-row">
-                    <div class="stat-card">📚<br>${courses.length}<br>كورس</div>
-                    <div class="stat-card">🎬<br>${lessonsSnap.size}<br>محاضرة</div>
-                    <div class="stat-card">📝<br>${examSnap.size}<br>امتحان</div>
-                    <div class="stat-card">📋<br>${assignSnap.size}<br>واجب</div>
+                <div class="card" style="display:flex; align-items:center; gap:18px;">
+                    <div style="width:64px;height:64px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;">👤</div>
+                    <div><h3>مرحباً، ${user.name || 'طالب'} 👋</h3><p style="color:var(--text-muted);">الصف: ${grade} | مفعل</p></div>
+                </div>
+                <div class="stats-grid">
+                    <div class="card stat-card"><div class="icon">📚</div><div class="value">${courses.length}</div><div class="label">كورس مسجل</div></div>
+                    <div class="card stat-card"><div class="icon">🎬</div><div class="value">${lessonsCount}</div><div class="label">محاضرة</div></div>
+                    <div class="card stat-card"><div class="icon">📝</div><div class="value">${examCount}</div><div class="label">امتحان</div></div>
+                    <div class="card stat-card"><div class="icon">📋</div><div class="value">${assignCount}</div><div class="label">واجب</div></div>
                 </div>
                 <h3>📖 كورساتي</h3>
-                <div class="courses-grid">
-                    ${courses.length ? courses.map(c => `<a href="course.html?id=${c.id}" class="course-card"><div class="banner">📚</div><div class="info"><h4>${c.name}</h4></div></a>`).join('') : '<p>لا توجد كورسات بعد</p>'}
+                <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px;">
+                    ${courses.length ? courses.map(c => `<a href="course.html?id=${c.id}" class="card" style="text-decoration:none;color:inherit;"><h4>${c.name}</h4><p style="color:var(--text-muted);">${c.grade||''} | ${c.type||'مجاني'}</p></a>`).join('') : '<div class="empty-state">لا كورسات بعد</div>'}
                 </div>
             `;
         } catch (e) {
-            container.innerHTML = '<p>❌ حدث خطأ، تأكد من قواعد Firestore</p>';
             console.error(e);
+            container.innerHTML = '<div class="empty-state">❌ خطأ: تأكد من تحديث قواعد Firestore (السماح بالقراءة للجميع).</div>';
         }
-    }
+    })();
 
-    window.logout = () => {
-        localStorage.clear();
-        auth.signOut();
-        window.location.href = 'login.html';
-    };
+    window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
 
     // Mobile sidebar toggle
-    const sidebar = document.getElementById('sidebar');
-    document.addEventListener('click', (e) => {
-        if (e.target.matches('.menu-toggle')) sidebar.classList.toggle('open');
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        if (!overlay) {
+            const div = document.createElement('div');
+            div.id = 'overlay'; div.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:40;';
+            document.body.appendChild(div);
+        }
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'menu-toggle';
+        toggleBtn.style.cssText = 'display:none;background:none;border:none;color:#fff;font-size:1.6rem;cursor:pointer;';
+        toggleBtn.innerHTML = '☰';
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('show');
+        });
+        document.querySelector('.topbar').prepend(toggleBtn);
+        document.getElementById('overlay').addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            document.getElementById('overlay').classList.remove('show');
+        });
     });
 </script>
 </body>

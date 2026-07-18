@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم | مستر عبدالله خليل</title>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
@@ -159,30 +158,30 @@
         appId: "1:530661483867:web:e2f165e9f808bcfcb8267e"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
 
-    let currentUser = null;
-    let userData = null;
+    // بدلاً من auth، نقرأ معرف الطالب من localStorage
+    const currentUserId = localStorage.getItem('studentId');
+    if (!currentUserId) {
+        window.location.href = 'login.html';
+        return;
+    }
 
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) { window.location.href = 'login.html'; return; }
-        currentUser = user;
-        const doc = await db.collection('students').doc(user.uid).get();
-        if (!doc.exists || doc.data().status !== 'مفعل') {
-            await auth.signOut();
-            window.location.href = 'login.html';
-            return;
-        }
-        userData = doc.data();
-        await loadDashboard();
-    });
+    loadDashboard(currentUserId);
 
-    async function loadDashboard() {
+    async function loadDashboard(userId) {
         const container = document.getElementById('dashboardContent');
         try {
+            const userDoc = await db.collection('students').doc(userId).get();
+            if (!userDoc.exists || userDoc.data().status !== 'مفعل') {
+                localStorage.removeItem('studentId');
+                localStorage.removeItem('studentName');
+                window.location.href = 'login.html';
+                return;
+            }
+            const userData = userDoc.data();
             const grade = userData.grade || '';
-            // نجلب الكورسات المطابقة للصف - نستخدم try/catch منفصل لكل استعلام
+
             let courses = [];
             let coursesCount = 0;
             try {
@@ -191,46 +190,33 @@
                 coursesCount = coursesSnap.size;
             } catch (e) { console.warn('تعذر جلب الكورسات:', e); }
 
-            // إجمالي المحاضرات المتاحة
             let lessonsCount = 0;
             try {
                 const lessonsSnap = await db.collection('lessons').get();
                 lessonsCount = lessonsSnap.size;
             } catch (e) { console.warn('تعذر جلب المحاضرات:', e); }
 
-            // نتائج الامتحانات التي قام بها الطالب
             let examResultsCount = 0;
             try {
-                const examSnap = await db.collection('examResults')
-                    .where('studentId', '==', currentUser.uid).get();
+                const examSnap = await db.collection('examResults').where('studentId', '==', userId).get();
                 examResultsCount = examSnap.size;
             } catch (e) { console.warn('تعذر جلب نتائج الامتحانات:', e); }
 
-            // تسليمات الواجبات
             let assignmentCount = 0;
             try {
-                const assignSnap = await db.collection('assignmentSubmissions')
-                    .where('studentId', '==', currentUser.uid).get();
+                const assignSnap = await db.collection('assignmentSubmissions').where('studentId', '==', userId).get();
                 assignmentCount = assignSnap.size;
             } catch (e) { console.warn('تعذر جلب الواجبات:', e); }
 
-            // آخر النشاطات (نعرض نشاطات افتراضية إذا كانت المجموعة غير موجودة)
             let activityItems = '';
             try {
-                const activitySnap = await db.collection('activity')
-                    .where('userId', '==', currentUser.uid)
-                    .orderBy('createdAt', 'desc')
-                    .limit(5).get();
+                const activitySnap = await db.collection('activity').where('userId', '==', userId).orderBy('createdAt','desc').limit(5).get();
                 activityItems = activitySnap.docs.map(doc => {
                     const data = doc.data();
                     return `<div class="activity-item"><span>${data.event || 'نشاط'}</span><span style="color:var(--text-muted);">${data.createdAt ? new Date(data.createdAt.seconds*1000).toLocaleString('ar-EG') : '—'}</span></div>`;
                 }).join('');
             } catch (e) {
-                console.warn('تعذر جلب النشاطات:', e);
-                // نشاطات افتراضية
-                activityItems = `
-                    <div class="activity-item"><span>🔍 أنت الآن في لوحة التحكم</span><span>الآن</span></div>
-                    <div class="activity-item"><span>📚 تصفح الكورسات المتاحة</span><span>—</span></div>`;
+                activityItems = `<div class="activity-item"><span>🔍 أنت الآن في لوحة التحكم</span><span>الآن</span></div>`;
             }
 
             const avatarHtml = userData.avatar ? `<img src="${userData.avatar}" alt="avatar">` : '👤';
@@ -250,7 +236,7 @@
                     <div class="stat-card"><div class="icon">📋</div><div class="value">${assignmentCount}</div><div class="label">واجب مسلّم</div></div>
                 </div>
                 <div class="section-title">📖 كورساتي</div>
-                <div class="courses-grid" id="coursesGrid">
+                <div class="courses-grid">
                     ${courses.length === 0 ? '<div class="empty-state">لا توجد كورسات لصفك حالياً</div>' : courses.map(c => `
                         <a href="course.html?id=${c.id}" class="course-card">
                             <div class="banner">${c.banner ? `<img src="${c.banner}" alt="${c.name}">` : '📚'}</div>
@@ -269,7 +255,7 @@
             `;
         } catch (e) {
             console.error(e);
-            container.innerHTML = '<div class="empty-state">❌ حدث خطأ أثناء تحميل البيانات. الرجاء المحاولة لاحقاً.</div>';
+            container.innerHTML = '<div class="empty-state">❌ حدث خطأ أثناء تحميل البيانات</div>';
         }
     }
 
@@ -291,7 +277,11 @@
         });
     });
 
-    window.logout = async () => { await auth.signOut(); window.location.href = 'login.html'; };
+    window.logout = function() {
+        localStorage.removeItem('studentId');
+        localStorage.removeItem('studentName');
+        window.location.href = 'login.html';
+    };
 })();
 </script>
 </body>

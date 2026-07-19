@@ -38,10 +38,10 @@
         .badge-success { background:rgba(34,211,187,0.2); color:#22d3bb; }
         .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
         .info-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
-        .stats-inline { display:flex; gap:20px; flex-wrap:wrap; }
-        .stat-item { text-align:center; }
-        .stat-item .value { font-size:1.8rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .stat-item .label { font-size:0.75rem; color:var(--text-muted); }
+        .stats-inline { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+        .stat-circle { text-align:center; }
+        .stat-circle svg { transform:rotate(-90deg); }
+        .stat-circle .value { font-size:1.5rem; font-weight:800; }
         .table-wrapper { overflow-x:auto; }
         table { width:100%; border-collapse:collapse; font-size:0.82rem; }
         th, td { padding:10px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); }
@@ -88,7 +88,6 @@
     const studentId = localStorage.getItem('studentId');
     if (!studentId) window.location.href = 'login.html';
 
-    // تحميل إعدادات المنصة
     (async function loadSettings() {
         const doc = await db.collection('settings').doc('platform').get().catch(() => null);
         if (doc && doc.exists) {
@@ -107,7 +106,6 @@
             const grade = user.grade || '';
             const avatarUrl = localStorage.getItem('studentAvatar') || user.avatar || '';
 
-            // إحصائيات
             let assignCount = 0, examResults = [];
             try { assignCount = (await db.collection('assignmentSubmissions').where('studentId','==',studentId).get()).size; } catch(e){}
             try {
@@ -130,11 +128,41 @@
                 <div class="info-row"><span>ولي الأمر</span><span>${user.parentPhone||'—'}</span></div>
                 <div class="info-row"><span>تاريخ التسجيل</span><span>${user.createdAt?.toDate?.().toLocaleDateString('ar-EG')||'—'}</span></div>
             </div>
-            <div class="card stats-inline">
-                <div class="stat-item"><div class="value">${assignCount}</div><div class="label">واجبات مسلّمة</div></div>
-                <div class="stat-item"><div class="value">${examResults.length}</div><div class="label">امتحانات</div></div>
-                <div class="stat-item"><div class="value">${avgScore}%</div><div class="label">متوسط النتائج</div></div>
+
+            <div class="card">
+                <h3 style="margin-bottom:16px;">📊 ملخص التقدم</h3>
+                <div class="stats-inline">
+                    <div class="stat-circle">
+                        <svg width="100" height="100" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2.5"/>
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="url(#grad1)" stroke-width="2.5"
+                                stroke-dasharray="${avgScore},100" stroke-linecap="round"/>
+                            <defs><linearGradient id="grad1"><stop offset="0%" stop-color="#4da8da"/><stop offset="100%" stop-color="#22d3bb"/></linearGradient></defs>
+                        </svg>
+                        <div class="value">${avgScore}%</div>
+                        <div style="color:var(--text-muted); font-size:0.8rem;">متوسط الدرجات</div>
+                    </div>
+                    <div class="stat-circle">
+                        <svg width="100" height="100" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2.5"/>
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="#7c5ce7" stroke-width="2.5"
+                                stroke-dasharray="${Math.min((assignCount/15)*100,100)},100" stroke-linecap="round"/>
+                        </svg>
+                        <div class="value">${assignCount}</div>
+                        <div style="color:var(--text-muted); font-size:0.8rem;">الواجبات المسلّمة</div>
+                    </div>
+                    <div class="stat-circle">
+                        <svg width="100" height="100" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2.5"/>
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="#f472b6" stroke-width="2.5"
+                                stroke-dasharray="${Math.min((examResults.length/10)*100,100)},100" stroke-linecap="round"/>
+                        </svg>
+                        <div class="value">${examResults.length}</div>
+                        <div style="color:var(--text-muted); font-size:0.8rem;">الامتحانات المحلولة</div>
+                    </div>
+                </div>
             </div>
+
             <h3>📝 نتائج الامتحانات الأخيرة</h3>
             <div class="card table-wrapper">
                 <table><thead><tr><th>الامتحان</th><th>الدرجة</th><th>النسبة</th><th>التاريخ</th></tr></thead>

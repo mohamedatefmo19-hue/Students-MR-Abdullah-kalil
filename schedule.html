@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جداول الحصص | مستر عبدالله خليل</title>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg-deep: #020012; --glass-bg: rgba(255,255,255,0.03); --glass-border: rgba(255,255,255,0.06);
+            --text-primary: #f0f0f7; --text-muted: #6e6e90; --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
+            --radius-lg: 24px; --font: 'Cairo', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
+        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; overflow-y:auto; }
+        .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; margin-bottom:20px; overflow:hidden; }
+        .sidebar .logo-icon img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+        .sidebar nav a { display:block; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-size:0.88rem; margin-bottom:4px; }
+        .sidebar nav a.active, .sidebar nav a:hover { background:rgba(255,255,255,0.05); color:#fff; }
+        .main { flex:1; overflow-y:auto; max-height:100vh; }
+        .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; }
+        .topbar h2 { background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; }
+        .content { padding:24px; max-width:900px; margin:0 auto; }
+        .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); margin-bottom:16px; }
+        .schedule-img { width:100%; max-height:600px; object-fit:contain; border-radius:16px; border:2px solid var(--glass-border); }
+        .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
+        @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="sidebar" id="sidebar">
+    <div class="logo-icon" id="sidebarLogo">ع</div>
+    <nav>
+        <a href="dashboard.html">🏠 الرئيسية</a>
+        <a href="assignments.html">📄 الواجبات</a>
+        <a href="exams.html">📝 الامتحانات</a>
+        <a href="schedule.html" class="active">📅 جداول الحصص</a>
+        <a href="questions.html">💬 الأسئلة</a>
+        <a href="profile.html">👤 حسابي</a>
+        <a href="settings.html">⚙️ الإعدادات</a>
+    </nav>
+</div>
+<div class="main">
+    <div class="topbar">
+        <h2>📅 جداول الحصص</h2>
+        <a href="dashboard.html" class="btn">رجوع</a>
+    </div>
+    <div class="content" id="scheduleContent">⏳ جاري التحميل...</div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDT0xGqGHzyyeB4qcz5AGMKxESCGZNNEWE",
+        authDomain: "abdullah-khalil.firebaseapp.com",
+        projectId: "abdullah-khalil",
+        storageBucket: "abdullah-khalil.firebasestorage.app",
+        messagingSenderId: "530661483867",
+        appId: "1:530661483867:web:e2f165e9f808bcfcb8267e"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) window.location.href = 'login.html';
+
+    // تحميل إعدادات المنصة
+    (async function loadSettings() {
+        const doc = await db.collection('settings').doc('platform').get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.logo) document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
+            if (data.name) document.title = `جداول الحصص | ${data.name}`;
+        }
+    })();
+
+    async function loadSchedule() {
+        const container = document.getElementById('scheduleContent');
+        try {
+            const userDoc = await db.collection('students').doc(studentId).get();
+            if (!userDoc.exists || userDoc.data().status !== 'مفعل') { window.location.href='login.html'; return; }
+            const grade = userDoc.data().grade || '';
+
+            // البحث عن مجموعة الطالب
+            let groupId = null;
+            const groupsSnap = await db.collection('groups').where('grade','==',grade).get();
+            for (const gDoc of groupsSnap.docs) {
+                if (gDoc.data().students?.includes(studentId)) { groupId = gDoc.id; break; }
+            }
+
+            let schedule = null;
+            if (groupId) {
+                const snap = await db.collection('schedules').where('groupId','==',groupId).orderBy('createdAt','desc').limit(1).get();
+                if (!snap.empty) schedule = snap.docs[0].data();
+            }
+            if (!schedule) {
+                const snap = await db.collection('schedules').where('grade','==',grade).where('groupId','==',null).orderBy('createdAt','desc').limit(1).get();
+                if (!snap.empty) schedule = snap.docs[0].data();
+            }
+
+            container.innerHTML = schedule ? `
+                <div class="card">
+                    <h3>جدول حصص ${grade}</h3>
+                    ${schedule.image ? `<img src="${schedule.image}" alt="جدول الحصص" class="schedule-img">` : '<div class="empty-state">لا توجد صورة للجدول</div>'}
+                </div>
+            ` : '<div class="empty-state">لا يوجد جدول حصص لمجموعتك أو صفك حالياً</div>';
+        } catch(e) {
+            container.innerHTML = '<div class="empty-state">❌ خطأ في التحميل</div>';
+        }
+    }
+    loadSchedule();
+</script>
+</body>
+</html>

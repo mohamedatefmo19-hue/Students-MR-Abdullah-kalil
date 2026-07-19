@@ -146,23 +146,23 @@
     if (!studentId) { window.location.href = 'login.html'; }
 
     // تحميل إعدادات المنصة (اللوجو والاسم)
-    async function loadPlatformSettings() {
+    (async function loadPlatformSettings() {
         try {
-            const doc = await db.collection('settings').doc('platform').get();
-            if (!doc.exists) return;
-            const data = doc.data();
-            if (data.logo) {
-                document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
-            }
-            if (data.name) {
-                document.getElementById('sidebarPlatformName').textContent = data.name;
-                document.title = `لوحة التحكم | ${data.name}`;
+            const doc = await db.collection('settings').doc('platform').get().catch(() => null);
+            if (doc && doc.exists) {
+                const data = doc.data();
+                if (data.logo) {
+                    document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
+                }
+                if (data.name) {
+                    document.getElementById('sidebarPlatformName').textContent = data.name;
+                    document.title = `لوحة التحكم | ${data.name}`;
+                }
             }
         } catch(e) { console.warn('تعذر تحميل الإعدادات'); }
-    }
-    loadPlatformSettings();
+    })();
 
-    (async function load() {
+    (async function loadDashboard() {
         const container = document.getElementById('dashboardContent');
         try {
             const userDoc = await db.collection('students').doc(studentId).get();
@@ -173,17 +173,49 @@
             const grade = user.grade || '';
             const avatarUrl = localStorage.getItem('studentAvatar') || user.avatar || '';
 
-            // جلب الإشعارات النشطة
+            // البحث عن مجموعة الطالب
+            let groupId = null;
+            try {
+                const gSnap = await db.collection('groups').where('grade', '==', grade).get();
+                if (!gSnap.empty) {
+                    for (const gDoc of gSnap.docs) {
+                        const gData = gDoc.data();
+                        if (gData.students && gData.students.includes(studentId)) {
+                            groupId = gDoc.id;
+                            break;
+                        }
+                    }
+                }
+            } catch(e) {}
+
+            // جلب الإشعارات النشطة (بدون فلاتر معقدة، ثم تصفية محلياً)
+            const now = new Date();
             let notifications = [];
             try {
-                const now = new Date();
-                const snap = await db.collection('notifications')
-                    .where('targetGrade', 'in', [grade, 'all'])
+                const allSnap = await db.collection('notifications')
                     .where('expiresAt', '>', now)
                     .orderBy('expiresAt', 'asc')
-                    .get();
-                snap.forEach(doc => notifications.push({ id: doc.id, ...doc.data() }));
-            } catch(e) {}
+                    .get()
+                    .catch(() => ({ empty: true, docs: [] }));
+
+                const notifMap = new Map();
+                if (!allSnap.empty) {
+                    allSnap.forEach(doc => {
+                        const n = doc.data();
+                        // مطابقة الشروط
+                        const gradeMatch = n.targetGrade === 'all' || n.targetGrade === grade || !n.targetGrade;
+                        const groupMatch = n.targetGroupId === groupId || !n.targetGroupId;
+                        const studentMatch = n.targetStudentId === studentId || !n.targetStudentId;
+
+                        if ((gradeMatch && groupMatch) || studentMatch) {
+                            if (!notifMap.has(doc.id)) {
+                                notifMap.set(doc.id, { id: doc.id, ...n });
+                            }
+                        }
+                    });
+                }
+                notifications = Array.from(notifMap.values());
+            } catch(e) { console.warn('تعذر جلب الإشعارات', e); }
 
             container.innerHTML = `
                 <div class="card welcome-card">
@@ -195,7 +227,7 @@
                 </div>
                 <div class="card">
                     <h3>🔔 الإشعارات</h3>
-                    <div class="notifications-list" id="notifList">
+                    <div class="notifications-list">
                         ${notifications.length ? notifications.map(n => `
                             <div class="notif-item">
                                 <span class="dot"></span>

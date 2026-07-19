@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="تسجيل الدخول إلى منصة مستر عبدالله خليل - كيمياء ببساطة">
-    <meta name="theme-color" content="#050510">
+    <meta name="description" content="تسجيل الدخول وإنشاء حساب - منصة مستر عبدالله خليل">
+    <meta name="theme-color" content="#03030f">
     <title>تسجيل الدخول | مستر عبدالله خليل</title>
-    <!-- Firebase SDKs -->
+    <!-- Firebase Auth + Firestore -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -24,284 +24,341 @@
             --gradient-1: linear-gradient(135deg, #4da8da 0%, #7c5ce7 50%, #22d3bb 100%);
             --gradient-2: linear-gradient(135deg, #7c5ce7 0%, #f472b6 50%, #fbbf24 100%);
             --shadow-glow: 0 0 80px rgba(124, 92, 231, 0.25);
-            --radius-sm: 10px;
-            --radius-md: 16px;
             --radius-xl: 32px;
+            --radius-lg: 24px;
             --font-ar: 'Cairo', sans-serif;
-            --transition-smooth: 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; font-size: 16px; }
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: var(--font-ar);
-            background: var(--bg-deep);
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-            -webkit-font-smoothing: antialiased;
-            padding: 20px;
+            font-family:var(--font-ar);
+            background:var(--bg-deep);
+            color:var(--text-primary);
+            display:flex; align-items:center; justify-content:center;
+            min-height:100vh; overflow-x:hidden; position:relative;
+            -webkit-font-smoothing:antialiased; padding:20px;
         }
-        /* Aurora Background */
-        .aurora-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-        .aurora-bg .orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.2; animation: auroraFloat 22s infinite ease-in-out; }
-        .aurora-bg .orb:nth-child(1) { width: 700px; height: 700px; background: radial-gradient(circle, #4da8da 0%, transparent 70%); top: -250px; left: -200px; }
-        .aurora-bg .orb:nth-child(2) { width: 550px; height: 550px; background: radial-gradient(circle, #7c5ce7 0%, transparent 70%); bottom: -200px; right: -200px; animation-delay: -10s; }
-        .aurora-bg .orb:nth-child(3) { width: 400px; height: 400px; background: radial-gradient(circle, #22d3bb 0%, transparent 70%); top: 50%; left: 40%; animation-delay: -16s; }
-        @keyframes auroraFloat { 0%,100% { transform: translate(0,0) scale(1); } 25% { transform: translate(70px,-50px) scale(1.12); } 50% { transform: translate(-40px,60px) scale(0.88); } 75% { transform: translate(-60px,-35px) scale(1.06); } }
-        /* Floating Shapes */
-        .floating-shapes { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-        .floating-shapes .shape { position: absolute; opacity: 0.05; animation: floatShape 18s infinite ease-in-out; }
-        .floating-shapes .hex { width: 70px; height: 40px; border: 2px solid rgba(255,255,255,0.4); clip-path: polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%); }
-        .floating-shapes .electron { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-1); box-shadow: 0 0 18px var(--accent-1); animation: electronOrbit 7s infinite linear; }
-        @keyframes floatShape { 0%,100% { transform: translateY(0) rotate(0deg); } 33% { transform: translateY(-45px) rotate(8deg); } 66% { transform: translateY(25px) rotate(-5deg); } }
-        @keyframes electronOrbit { 0% { transform: translate(0,0); } 25% { transform: translate(35px,-25px); } 50% { transform: translate(0,-45px); } 75% { transform: translate(-35px,-25px); } 100% { transform: translate(0,0); } }
-        /* Mouse Glow */
-        .mouse-glow { position: fixed; pointer-events: none; z-index: 9999; width: 450px; height: 450px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,231,0.1) 0%, transparent 60%); transform: translate(-50%,-50%); opacity: 0; transition: opacity 0.35s; }
-        body:hover .mouse-glow { opacity: 1; }
-        /* Login Card */
-        .login-container { position: relative; z-index: 10; width: 100%; max-width: 440px; animation: cardEnter 0.7s cubic-bezier(0.34,1.56,0.64,1); }
-        @keyframes cardEnter { from { opacity: 0; transform: translateY(40px) scale(0.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .login-card {
-            background: var(--glass-bg); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
-            border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
-            padding: 40px 30px; box-shadow: 0 25px 70px rgba(0,0,0,0.6), var(--shadow-glow);
+        .aurora-bg { position:fixed; inset:0; pointer-events:none; z-index:0; }
+        .aurora-bg .orb { position:absolute; border-radius:50%; filter:blur(140px); opacity:0.2; animation:auroraFloat 22s infinite; }
+        .aurora-bg .orb:nth-child(1){ width:700px; height:700px; background:radial-gradient(circle,#4da8da,transparent 70%); top:-250px; left:-200px; }
+        .aurora-bg .orb:nth-child(2){ width:550px; height:550px; background:radial-gradient(circle,#7c5ce7,transparent 70%); bottom:-200px; right:-200px; animation-delay:-10s; }
+        @keyframes auroraFloat { 0%,100%{transform:translate(0,0) scale(1);} 25%{transform:translate(70px,-50px) scale(1.12);} 50%{transform:translate(-40px,60px) scale(0.88);} 75%{transform:translate(-60px,-35px) scale(1.06);} }
+        .floating-shapes { position:fixed; inset:0; pointer-events:none; z-index:0; }
+        .floating-shapes .shape { position:absolute; opacity:0.05; animation:floatShape 18s infinite; }
+        .floating-shapes .hex { width:70px; height:40px; border:2px solid rgba(255,255,255,0.4); clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%); }
+        @keyframes floatShape { 0%,100%{transform:translateY(0) rotate(0deg);} 33%{transform:translateY(-45px) rotate(8deg);} 66%{transform:translateY(25px) rotate(-5deg);} }
+        .mouse-glow { position:fixed; width:450px; height:450px; border-radius:50%; background:radial-gradient(circle, rgba(124,92,231,0.1) 0%, transparent 60%); transform:translate(-50%,-50%); pointer-events:none; z-index:9999; opacity:0; transition:opacity 0.35s; }
+        body:hover .mouse-glow { opacity:1; }
+        .container { position:relative; z-index:10; width:100%; max-width:500px; animation: cardEnter 0.7s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes cardEnter { from{opacity:0; transform:translateY(40px) scale(0.92);} to{opacity:1; transform:translateY(0) scale(1);} }
+        .card {
+            background:var(--glass-bg); backdrop-filter:blur(35px); -webkit-backdrop-filter:blur(35px);
+            border:1px solid var(--glass-border); border-radius:var(--radius-xl);
+            padding:36px 28px; box-shadow:0 25px 70px rgba(0,0,0,0.6), var(--shadow-glow);
         }
-        .login-header { text-align: center; margin-bottom: 32px; }
-        .login-header .logo-icon {
-            width: 60px; height: 60px; border-radius: var(--radius-md); background: var(--gradient-1);
-            display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.6rem;
-            color: #fff; margin: 0 auto 16px; box-shadow: 0 0 35px rgba(124,92,231,0.5);
-            animation: logoPulse 3s infinite ease-in-out;
+        .logo-icon {
+            width:60px; height:60px; border-radius:16px; background:var(--gradient-1);
+            display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.6rem;
+            color:#fff; margin:0 auto 16px; box-shadow:0 0 35px rgba(124,92,231,0.5);
+            animation:logoPulse 3s infinite; overflow:hidden;
         }
-        @keyframes logoPulse { 0%,100% { box-shadow: 0 0 35px rgba(124,92,231,0.5); } 50% { box-shadow: 0 0 55px rgba(124,92,231,0.8),0 0 80px rgba(77,168,218,0.3); } }
-        .login-header h1 { font-size: 1.6rem; font-weight: 700; background: var(--gradient-2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .login-header p { color: var(--text-muted); font-size: 0.88rem; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary); }
-        .form-group input { width: 100%; padding: 14px 18px; border-radius: 30px; border: 1.5px solid var(--glass-border); background: rgba(255,255,255,0.04); color: #fff; font-family: var(--font-ar); font-size: 0.95rem; outline: none; transition: 0.25s; }
-        .form-group input:focus { border-color: var(--accent-2); box-shadow: 0 0 0 4px rgba(124,92,231,0.15); background: rgba(255,255,255,0.06); }
-        .btn-login {
-            width: 100%; padding: 15px; border-radius: 30px; font-family: var(--font-ar); font-weight: 700;
-            font-size: 1rem; border: none; cursor: pointer; background: var(--gradient-1); color: #fff;
-            transition: var(--transition-smooth); position: relative; overflow: hidden;
-            box-shadow: 0 8px 28px rgba(124,92,231,0.4); margin-top: 4px;
+        .logo-icon img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+        @keyframes logoPulse { 0%,100%{box-shadow:0 0 35px rgba(124,92,231,0.5);} 50%{box-shadow:0 0 55px rgba(124,92,231,0.8),0 0 80px rgba(77,168,218,0.3);} }
+        .platform-name { text-align:center; font-size:1.4rem; font-weight:700; margin-bottom:4px; }
+        .tabs { display:flex; gap:8px; margin-bottom:28px; }
+        .tab-btn {
+            flex:1; padding:10px; border-radius:30px; font-weight:600; font-size:0.9rem;
+            border:1.5px solid var(--glass-border); background:transparent; color:var(--text-secondary);
+            cursor:pointer; transition:var(--transition); text-align:center;
         }
-        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(124,92,231,0.6); }
-        .btn-login:active { transform: scale(0.97); }
-        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .ripple-effect { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.3); transform: scale(0); animation: ripple 0.6s ease-out; pointer-events: none; }
-        @keyframes ripple { to { transform: scale(4); opacity: 0; } }
-        .error-message, .success-message { padding: 12px 16px; border-radius: 30px; font-size: 0.85rem; text-align: center; margin-bottom: 16px; display: none; }
-        .error-message { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #fca5a5; animation: shake 0.5s ease; }
-        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
-        .success-message { background: rgba(34,211,187,0.12); border: 1px solid rgba(34,211,187,0.35); color: #5eeadb; }
-        .links { text-align: center; margin-top: 18px; font-size: 0.85rem; }
-        .links a { color: var(--accent-1); text-decoration: none; font-weight: 500; }
-        .links a:hover { color: #fff; text-decoration: underline; }
-        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.25); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s infinite linear; vertical-align: middle; margin-left: 6px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 480px) { .login-card { padding: 30px 20px; border-radius: var(--radius-lg); } .login-header h1 { font-size: 1.4rem; } }
+        .tab-btn.active { background:var(--gradient-1); border-color:transparent; color:#fff; }
+        .form-panel { display:none; animation:fadeSlide 0.4s ease; }
+        .form-panel.active { display:block; }
+        @keyframes fadeSlide { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+        .form-group { margin-bottom:18px; }
+        .form-group label { display:block; font-size:0.85rem; margin-bottom:6px; color:var(--text-secondary); }
+        .form-group input, .form-group select { width:100%; padding:13px 16px; border-radius:30px; border:1.5px solid var(--glass-border); background:rgba(255,255,255,0.04); color:#fff; font-family:var(--font-ar); font-size:0.9rem; outline:none; transition:0.25s; }
+        .form-group input:focus, .form-group select:focus { border-color:var(--accent-2); box-shadow:0 0 0 4px rgba(124,92,231,0.15); }
+        .btn-submit {
+            width:100%; padding:15px; border-radius:30px; font-weight:700; font-size:1rem; border:none;
+            cursor:pointer; background:var(--gradient-1); color:#fff; transition:var(--transition);
+            box-shadow:0 8px 28px rgba(124,92,231,0.4); margin-top:8px;
+        }
+        .btn-submit:hover { transform:translateY(-2px); box-shadow:0 14px 40px rgba(124,92,231,0.6); }
+        .btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+        .message { padding:12px 16px; border-radius:30px; font-size:0.85rem; text-align:center; margin-bottom:16px; display:none; }
+        .error-message { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#fca5a5; }
+        .success-message { background:rgba(34,211,187,0.12); border:1px solid rgba(34,211,187,0.35); color:#5eeadb; }
+        .links { text-align:center; margin-top:16px; font-size:0.85rem; }
+        .links a { color:var(--accent-1); text-decoration:none; font-weight:500; }
+        .links a:hover { color:#fff; }
+        .spinner { display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,0.25); border-top-color:#fff; border-radius:50%; animation:spin 0.7s infinite linear; vertical-align:middle; margin-left:6px; }
+        @keyframes spin { to{transform:rotate(360deg);} }
+        @media (max-width:480px) { .card { padding:30px 20px; border-radius:var(--radius-lg); } }
     </style>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="aurora-bg"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
-    <div class="floating-shapes">
-        <div class="shape hex" style="top:8%;left:6%;"></div>
-        <div class="shape hex" style="bottom:25%;right:10%;width:55px;height:32px;animation-delay:-6s;"></div>
-        <div class="shape electron" style="top:35%;left:18%;animation-delay:-2s;"></div>
-        <div class="shape electron" style="bottom:30%;right:14%;animation-delay:-7s;"></div>
-    </div>
-    <div class="mouse-glow" id="mouseGlow"></div>
+<div class="aurora-bg"><div class="orb"></div><div class="orb"></div></div>
+<div class="floating-shapes">
+    <div class="shape hex" style="top:8%;left:6%;"></div>
+    <div class="shape hex" style="bottom:25%;right:10%;width:55px;height:32px;"></div>
+</div>
+<div class="mouse-glow" id="mouseGlow"></div>
 
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <div class="logo-icon">ع</div>
-                <h1>تسجيل الدخول</h1>
-                <p>مرحباً بك في منصة مستر عبدالله خليل</p>
-            </div>
-            <div class="error-message" id="errorMsg"></div>
-            <div class="success-message" id="successMsg"></div>
+<div class="container">
+    <div class="card">
+        <div class="logo-icon" id="loginLogo">ع</div>
+        <div class="platform-name" id="platformNameDisplay">مستر عبدالله خليل</div>
+        <div class="tabs">
+            <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">تسجيل الدخول</button>
+            <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">إنشاء حساب</button>
+        </div>
+
+        <!-- رسائل الخطأ والنجاح -->
+        <div class="error-message message" id="errorMsg"></div>
+        <div class="success-message message" id="successMsg"></div>
+
+        <!-- نموذج تسجيل الدخول -->
+        <div class="form-panel active" id="loginPanel">
             <form id="loginForm" autocomplete="off">
                 <div class="form-group">
                     <label>البريد الإلكتروني</label>
-                    <input type="email" id="email" placeholder="example@email.com" required>
+                    <input type="email" id="loginEmail" placeholder="example@email.com" required>
                 </div>
                 <div class="form-group">
                     <label>كلمة المرور</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="btn-login" id="loginBtn">تسجيل الدخول</button>
+                <button type="submit" class="btn-submit" id="loginBtn">تسجيل الدخول</button>
             </form>
-            <div class="links" style="margin-top:14px;">
-                <a href="forgot-password.html">نسيت كلمة المرور؟</a>
-            </div>
-            <div class="links">
-                ليس لديك حساب؟ <a href="register.html">إنشاء حساب جديد</a>
-            </div>
-            <div class="links" style="margin-top:4px;">
-                <a href="index.html">← العودة للرئيسية</a>
+            <div class="links" style="margin-top:12px;">
+                <a href="#" onclick="showForgotPassword()">نسيت كلمة المرور؟</a>
             </div>
         </div>
+
+        <!-- نموذج استعادة كلمة المرور (مخفي) -->
+        <div class="form-panel" id="forgotPanel">
+            <h3 style="text-align:center; margin-bottom:16px;">استعادة كلمة المرور</h3>
+            <form id="forgotForm" autocomplete="off">
+                <div class="form-group">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" id="forgotEmail" placeholder="example@email.com" required>
+                </div>
+                <button type="submit" class="btn-submit" id="forgotBtn">إرسال رابط الاستعادة</button>
+            </form>
+            <div class="links">
+                <a href="#" onclick="switchTab('login')">العودة لتسجيل الدخول</a>
+            </div>
+        </div>
+
+        <!-- نموذج إنشاء حساب -->
+        <div class="form-panel" id="registerPanel">
+            <form id="registerForm" autocomplete="off">
+                <div class="form-group">
+                    <label>الاسم بالكامل</label>
+                    <input type="text" id="regName" placeholder="أدخل اسمك الكامل" required>
+                </div>
+                <div class="form-group">
+                    <label>رقم الهاتف</label>
+                    <input type="tel" id="regPhone" placeholder="01000000000" required>
+                </div>
+                <div class="form-group">
+                    <label>رقم ولي الأمر</label>
+                    <input type="tel" id="regParentPhone" placeholder="01000000000" required>
+                </div>
+                <div class="form-group">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" id="regEmail" placeholder="example@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="regPassword" placeholder="••••••••" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>الصف الدراسي</label>
+                    <select id="regGrade" required>
+                        <option value="">اختر الصف</option>
+                        <option>الأول الإعدادي</option>
+                        <option>الثاني الإعدادي</option>
+                        <option>الثالث الإعدادي</option>
+                        <option>الأول الثانوي</option>
+                        <option>الثاني الثانوي</option>
+                        <option>الثالث الثانوي</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit" id="registerBtn">إنشاء الحساب</button>
+            </form>
+        </div>
     </div>
+</div>
 
-    <script>
-        (function() {
-            // Firebase Config
-            const firebaseConfig = {
-                apiKey: "AIzaSyDT0xGqGHzyyeB4qcz5AGMKxESCGZNNEWE",
-                authDomain: "abdullah-khalil.firebaseapp.com",
-                projectId: "abdullah-khalil",
-                storageBucket: "abdullah-khalil.firebasestorage.app",
-                messagingSenderId: "530661483867",
-                appId: "1:530661483867:web:e2f165e9f808bcfcb8267e",
-                measurementId: "G-D6N5T2G2HQ"
-            };
-            firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth();
-            const db = firebase.firestore();
+<script>
+    (function() {
+        const firebaseConfig = {
+            apiKey: "AIzaSyDT0xGqGHzyyeB4qcz5AGMKxESCGZNNEWE",
+            authDomain: "abdullah-khalil.firebaseapp.com",
+            projectId: "abdullah-khalil",
+            storageBucket: "abdullah-khalil.firebasestorage.app",
+            messagingSenderId: "530661483867",
+            appId: "1:530661483867:web:e2f165e9f808bcfcb8267e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-            // Mouse Glow
-            const mouseGlow = document.getElementById('mouseGlow');
-            document.addEventListener('mousemove', e => { mouseGlow.style.left = e.clientX + 'px'; mouseGlow.style.top = e.clientY + 'px'; });
-            document.addEventListener('mouseleave', () => mouseGlow.style.opacity = '0');
-            document.addEventListener('mouseenter', () => mouseGlow.style.opacity = '1');
+        // Mouse glow
+        const mouseGlow = document.getElementById('mouseGlow');
+        document.addEventListener('mousemove', e => { mouseGlow.style.left = e.clientX+'px'; mouseGlow.style.top = e.clientY+'px'; });
+        document.addEventListener('mouseleave', () => mouseGlow.style.opacity='0');
+        document.addEventListener('mouseenter', () => mouseGlow.style.opacity='1');
 
-            // Ripple Effect
-            document.querySelectorAll('.btn-login').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    const ripple = document.createElement('span');
-                    ripple.className = 'ripple-effect';
-                    const rect = this.getBoundingClientRect();
-                    const size = Math.max(rect.width, rect.height);
-                    ripple.style.width = ripple.style.height = size + 'px';
-                    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
-                    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
-                    this.appendChild(ripple);
-                    ripple.addEventListener('animationend', () => ripple.remove());
-                });
-            });
+        // تحميل إعدادات المنصة (اللوجو والاسم)
+        async function loadPlatformSettings() {
+            try {
+                const doc = await db.collection('settings').doc('platform').get();
+                if (!doc.exists) return;
+                const data = doc.data();
+                // تحديث اللوجو
+                if (data.logo) {
+                    document.getElementById('loginLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
+                }
+                // تحديث الاسم
+                if (data.name) {
+                    document.getElementById('platformNameDisplay').textContent = data.name;
+                    document.title = `تسجيل الدخول | ${data.name}`;
+                }
+            } catch(e) { console.warn('تعذر تحميل الإعدادات'); }
+        }
+        loadPlatformSettings();
 
-            // Login Form
-            const loginForm = document.getElementById('loginForm');
+        // تبديل الأقسام
+        window.switchTab = function(tab) {
+            document.getElementById('loginPanel').classList.remove('active');
+            document.getElementById('registerPanel').classList.remove('active');
+            document.getElementById('forgotPanel').classList.remove('active');
+            document.getElementById('tabLogin').classList.remove('active');
+            document.getElementById('tabRegister').classList.remove('active');
+            document.getElementById('errorMsg').style.display='none';
+            document.getElementById('successMsg').style.display='none';
+            if (tab === 'login') {
+                document.getElementById('loginPanel').classList.add('active');
+                document.getElementById('tabLogin').classList.add('active');
+            } else {
+                document.getElementById('registerPanel').classList.add('active');
+                document.getElementById('tabRegister').classList.add('active');
+            }
+        };
+
+        window.showForgotPassword = function() {
+            document.getElementById('loginPanel').classList.remove('active');
+            document.getElementById('registerPanel').classList.remove('active');
+            document.getElementById('forgotPanel').classList.add('active');
+            document.getElementById('tabLogin').classList.add('active');
+            document.getElementById('tabRegister').classList.remove('active');
+        };
+
+        // تسجيل الدخول
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
             const errorMsg = document.getElementById('errorMsg');
             const successMsg = document.getElementById('successMsg');
-            const loginBtn = document.getElementById('loginBtn');
-
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value;
-
-                errorMsg.style.display = 'none';
-                successMsg.style.display = 'none';
-
-                if (!email || !password) {
-                    errorMsg.textContent = 'يرجى إدخال البريد الإلكتروني وكلمة المرور';
-                    errorMsg.style.display = 'block';
+            errorMsg.style.display='none'; successMsg.style.display='none';
+            if (!email || !password) { errorMsg.textContent='يرجى إدخال البريد وكلمة المرور'; errorMsg.style.display='block'; return; }
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> جاري الدخول...';
+            try {
+                const userCred = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCred.user;
+                const doc = await db.collection('students').doc(user.uid).get();
+                if (!doc.exists || doc.data().status !== 'مفعل') {
+                    await auth.signOut();
+                    errorMsg.textContent = 'الحساب غير مفعل أو غير موجود';
+                    errorMsg.style.display='block';
+                    btn.disabled = false; btn.textContent = 'تسجيل الدخول';
                     return;
                 }
+                localStorage.setItem('studentId', user.uid);
+                localStorage.setItem('studentName', doc.data().name || 'طالب');
+                localStorage.setItem('studentGrade', doc.data().grade || '');
+                successMsg.textContent = 'تم الدخول بنجاح!';
+                successMsg.style.display='block';
+                setTimeout(() => window.location.href = 'dashboard.html', 1000);
+            } catch (err) {
+                let msg = 'خطأ في تسجيل الدخول';
+                if (err.code === 'auth/user-not-found') msg = 'البريد غير مسجل';
+                else if (err.code === 'auth/wrong-password') msg = 'كلمة مرور خاطئة';
+                errorMsg.textContent = msg;
+                errorMsg.style.display='block';
+                btn.disabled = false; btn.textContent = 'تسجيل الدخول';
+            }
+        });
 
-                loginBtn.disabled = true;
-                loginBtn.innerHTML = '<span class="spinner"></span> جاري الدخول...';
+        // استعادة كلمة المرور
+        document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+            errorMsg.style.display='none'; successMsg.style.display='none';
+            if (!email) { errorMsg.textContent='أدخل البريد الإلكتروني'; errorMsg.style.display='block'; return; }
+            const btn = document.getElementById('forgotBtn');
+            btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> جاري الإرسال...';
+            try {
+                await auth.sendPasswordResetEmail(email);
+                successMsg.textContent = 'تم إرسال رابط الاستعادة إلى بريدك';
+                successMsg.style.display='block';
+                btn.disabled = true; btn.textContent = 'تم الإرسال';
+            } catch (err) {
+                errorMsg.textContent = err.code === 'auth/user-not-found' ? 'البريد غير مسجل' : 'خطأ';
+                errorMsg.style.display='block';
+                btn.disabled = false; btn.textContent = 'إرسال رابط الاستعادة';
+            }
+        });
 
-                try {
-                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                    const user = userCredential.user;
-
-                    // التحقق من وجود حساب الطالب وحالته
-                    const userDoc = await db.collection('students').doc(user.uid).get();
-                    if (!userDoc.exists) {
-                        await auth.signOut();
-                        errorMsg.textContent = 'هذا الحساب ليس حساب طالب. يرجى التواصل مع الإدارة.';
-                        errorMsg.style.display = 'block';
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'تسجيل الدخول';
-                        return;
-                    }
-
-                    const userData = userDoc.data();
-                    const status = userData?.status || 'قيد المراجعة';
-
-                    if (status === 'محظور') {
-                        await auth.signOut();
-                        errorMsg.textContent = 'تم حظر حسابك. يرجى التواصل مع الإدارة.';
-                        errorMsg.style.display = 'block';
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'تسجيل الدخول';
-                        return;
-                    }
-
-                    if (status === 'قيد المراجعة') {
-                        await auth.signOut();
-                        errorMsg.textContent = 'حسابك قيد المراجعة. سيتم تفعيله بعد موافقة الأدمن.';
-                        errorMsg.style.display = 'block';
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'تسجيل الدخول';
-                        return;
-                    }
-
-                    if (status === 'انتظار الدفع') {
-                        await auth.signOut();
-                        errorMsg.textContent = 'يرجى إتمام عملية الدفع للوصول إلى المنصة.';
-                        errorMsg.style.display = 'block';
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'تسجيل الدخول';
-                        return;
-                    }
-
-                    if (status === 'مفعل') {
-                        // تخزين الجلسة محلياً
-                        localStorage.setItem('studentId', user.uid);
-                        localStorage.setItem('studentName', userData.name || 'طالب');
-                        localStorage.setItem('studentGrade', userData.grade || '');
-                        successMsg.textContent = 'تم تسجيل الدخول بنجاح! جاري التحويل...';
-                        successMsg.style.display = 'block';
-                        setTimeout(() => {
-                            window.location.href = 'dashboard.html';
-                        }, 1200);
-                        return;
-                    }
-
-                    await auth.signOut();
-                    errorMsg.textContent = 'حالة الحساب غير معروفة. يرجى التواصل مع الدعم.';
-                    errorMsg.style.display = 'block';
-                } catch (error) {
-                    console.error(error);
-                    let message = 'حدث خطأ أثناء تسجيل الدخول';
-                    if (error.code === 'auth/user-not-found') message = 'البريد الإلكتروني غير مسجل';
-                    else if (error.code === 'auth/wrong-password') message = 'كلمة المرور غير صحيحة';
-                    else if (error.code === 'auth/invalid-email') message = 'صيغة البريد الإلكتروني غير صحيحة';
-                    else if (error.code === 'auth/invalid-credential') message = 'بيانات الدخول غير صحيحة';
-                    else if (error.code === 'auth/too-many-requests') message = 'محاولات كثيرة. حاول لاحقاً.';
-                    errorMsg.textContent = message;
-                    errorMsg.style.display = 'block';
-                } finally {
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'تسجيل الدخول';
-                }
-            });
-
-            // التحقق التلقائي من الجلسة النشطة
-            auth.onAuthStateChanged(async (user) => {
-                if (user && window.location.pathname.includes('login.html')) {
-                    const userDoc = await db.collection('students').doc(user.uid).get();
-                    if (userDoc.exists && userDoc.data()?.status === 'مفعل') {
-                        localStorage.setItem('studentId', user.uid);
-                        localStorage.setItem('studentName', userDoc.data().name || 'طالب');
-                        localStorage.setItem('studentGrade', userDoc.data().grade || '');
-                        window.location.href = 'dashboard.html';
-                    }
-                }
-            });
-        })();
-    </script>
+        // إنشاء حساب
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const parentPhone = document.getElementById('regParentPhone').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const grade = document.getElementById('regGrade').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+            errorMsg.style.display='none'; successMsg.style.display='none';
+            if (!name || !phone || !parentPhone || !email || !password || !grade) {
+                errorMsg.textContent = 'يرجى ملء جميع الحقول';
+                errorMsg.style.display='block'; return;
+            }
+            const btn = document.getElementById('registerBtn');
+            btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> جاري إنشاء الحساب...';
+            try {
+                const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCred.user;
+                await db.collection('students').doc(user.uid).set({
+                    name, phone, parentPhone, email, grade,
+                    status: 'قيد المراجعة',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await auth.signOut();
+                successMsg.textContent = 'تم إنشاء الحساب! انتظر التفعيل.';
+                successMsg.style.display='block';
+                btn.disabled = true; btn.textContent = 'تم التسجيل';
+                setTimeout(() => switchTab('login'), 2500);
+            } catch (err) {
+                let msg = 'خطأ';
+                if (err.code === 'auth/email-already-in-use') msg = 'البريد مستخدم بالفعل';
+                else if (err.code === 'auth/weak-password') msg = 'كلمة المرور ضعيفة';
+                errorMsg.textContent = msg;
+                errorMsg.style.display='block';
+                btn.disabled = false; btn.textContent = 'إنشاء الحساب';
+            }
+        });
+    })();
+</script>
 </body>
 </html>

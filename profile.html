@@ -9,46 +9,67 @@
     <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
     <style>
         :root {
-            --bg-deep: #020012;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.06);
-            --text-primary: #f0f0f7;
-            --text-muted: #6e6e90;
-            --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
-            --radius-lg: 20px;
-            --font: 'Cairo', sans-serif;
+            --bg-deep: #020012; --glass-bg: rgba(255,255,255,0.03); --glass-border: rgba(255,255,255,0.06);
+            --glass-hover: rgba(255,255,255,0.05); --text-primary: #f0f0f7; --text-secondary: #b8b8d4;
+            --text-muted: #6e6e90; --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
+            --accent-3: #22d3bb; --radius-lg: 24px; --radius-md: 16px; --font: 'Cairo', sans-serif;
+            --transition: 0.3s ease;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
         .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; overflow-y:auto; }
-        .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; margin-bottom:20px; }
-        .sidebar nav a { display:block; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; margin-bottom:4px; }
+        .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; margin-bottom:20px; overflow:hidden; }
+        .sidebar .logo-icon img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+        .sidebar nav a { display:block; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-size:0.88rem; margin-bottom:4px; }
         .sidebar nav a.active, .sidebar nav a:hover { background:rgba(255,255,255,0.05); color:#fff; }
         .main { flex:1; overflow-y:auto; max-height:100vh; }
         .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; }
-        .content { padding:24px; max-width:700px; margin:0 auto; }
+        .topbar h2 { background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; transition:var(--transition); }
+        .btn-primary { background:var(--accent-gradient); border:none; color:#fff; }
+        .content { padding:24px; max-width:800px; margin:0 auto; }
         .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); margin-bottom:16px; }
-        .avatar-section { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-        .avatar-preview { width:90px; height:90px; border-radius:50%; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:#fff; object-fit:cover; }
-        .upload-btn { background:var(--accent-gradient); border:none; padding:8px 18px; border-radius:24px; color:#fff; font-weight:600; cursor:pointer; font-size:0.9rem; margin-top:10px; }
-        .message { padding:10px; border-radius:14px; margin:10px 0; font-size:0.85rem; display:none; }
-        .success { background:rgba(34,211,187,0.15); color:#22d3bb; border:1px solid rgba(34,211,187,0.3); }
-        .error { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
-        .btn { padding:8px 16px; border-radius:24px; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; }
+        .profile-header { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+        .avatar-wrapper { position:relative; }
+        .avatar-ring { width:90px; height:90px; border-radius:50%; padding:3px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; }
+        .avatar-ring img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+        .avatar-upload { position:absolute; bottom:0; left:0; background:var(--accent-gradient); border:none; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:0.9rem; }
+        .badge { padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:600; }
+        .badge-success { background:rgba(34,211,187,0.2); color:#22d3bb; }
+        .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .info-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .stats-inline { display:flex; gap:20px; flex-wrap:wrap; }
+        .stat-item { text-align:center; }
+        .stat-item .value { font-size:1.8rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .stat-item .label { font-size:0.75rem; color:var(--text-muted); }
+        .table-wrapper { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+        th, td { padding:10px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); }
+        th { color:var(--text-muted); font-weight:600; font-size:0.7rem; }
+        .message { padding:8px 12px; border-radius:14px; font-size:0.8rem; margin-top:8px; display:none; }
+        .message.success { background:rgba(34,211,187,0.15); color:#22d3bb; border:1px solid rgba(34,211,187,0.3); }
+        @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } .info-grid { grid-template-columns:1fr; } }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="sidebar">
-    <div class="logo-icon">ع</div>
+<div class="sidebar" id="sidebar">
+    <div class="logo-icon" id="sidebarLogo">ع</div>
     <nav>
         <a href="dashboard.html">🏠 الرئيسية</a>
+        <a href="assignments.html">📄 الواجبات</a>
+        <a href="exams.html">📝 الامتحانات</a>
+        <a href="schedule.html">📅 جداول الحصص</a>
+        <a href="questions.html">💬 الأسئلة</a>
         <a href="profile.html" class="active">👤 حسابي</a>
         <a href="settings.html">⚙️ الإعدادات</a>
     </nav>
 </div>
 <div class="main">
-    <div class="topbar"><h2>👤 الملف الشخصي</h2><a href="dashboard.html" class="btn">رجوع</a></div>
+    <div class="topbar">
+        <h2>👤 الملف الشخصي</h2>
+        <div><a href="dashboard.html" class="btn">رجوع</a> <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button></div>
+    </div>
     <div class="content" id="profileContent">⏳ جاري التحميل...</div>
 </div>
 
@@ -63,9 +84,19 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
+    const CLOUDINARY_CLOUD = "deaevfmvm", CLOUDINARY_PRESET = "ml_default", CLOUDINARY_KEY = "864215656447737";
     const studentId = localStorage.getItem('studentId');
     if (!studentId) window.location.href = 'login.html';
+
+    // تحميل إعدادات المنصة
+    (async function loadSettings() {
+        const doc = await db.collection('settings').doc('platform').get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.logo) document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
+            if (data.name) document.title = `الملف الشخصي | ${data.name}`;
+        }
+    })();
 
     async function loadProfile() {
         const container = document.getElementById('profileContent');
@@ -73,68 +104,60 @@
             const doc = await db.collection('students').doc(studentId).get();
             if (!doc.exists || doc.data().status !== 'مفعل') { window.location.href='login.html'; return; }
             const user = doc.data();
+            const grade = user.grade || '';
             const avatarUrl = localStorage.getItem('studentAvatar') || user.avatar || '';
 
+            let assignCount = 0, examResults = [];
+            try { assignCount = (await db.collection('assignmentSubmissions').where('studentId','==',studentId).get()).size; } catch(e){}
+            try { const snap = await db.collection('examResults').where('studentId','==',studentId).orderBy('createdAt','desc').limit(5).get(); snap.forEach(d => examResults.push(d.data())); } catch(e){}
+            const avgScore = examResults.length ? Math.round(examResults.reduce((a,b)=>a+(b.percentage||0),0)/examResults.length) : 0;
+
             container.innerHTML = `
-                <div class="card avatar-section">
-                    <img class="avatar-preview" src="${avatarUrl || ''}" alt="الصورة" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="avatar-preview" style="display:${avatarUrl ? 'none' : 'flex'};">👤</div>
-                    <div>
-                        <h3>${user.name || 'طالب'}</h3>
-                        <p style="color:var(--text-muted);">${user.grade || ''}</p>
-                        <button class="upload-btn" onclick="uploadAvatar()">📷 تغيير الصورة</button>
-                        <div class="message" id="uploadMsg"></div>
-                    </div>
+            <div class="card profile-header">
+                <div class="avatar-wrapper">
+                    <div class="avatar-ring">${avatarUrl ? `<img src="${avatarUrl}" alt="صورة">` : '👤'}</div>
+                    <button class="avatar-upload" onclick="uploadAvatar()">📷</button>
                 </div>
+                <div><h2>${user.name||'طالب'}</h2><p style="color:var(--text-muted);">الصف: ${grade} | <span class="badge badge-success">مفعل</span></p><div id="uploadMsg" class="message"></div></div>
+            </div>
+            <div class="card info-grid">
+                <div class="info-row"><span>البريد</span><span>${user.email||'—'}</span></div>
+                <div class="info-row"><span>الهاتف</span><span>${user.phone||'—'}</span></div>
+                <div class="info-row"><span>ولي الأمر</span><span>${user.parentPhone||'—'}</span></div>
+                <div class="info-row"><span>تاريخ التسجيل</span><span>${user.createdAt?.toDate?.().toLocaleDateString('ar-EG')||'—'}</span></div>
+            </div>
+            <div class="card stats-inline">
+                <div class="stat-item"><div class="value">${assignCount}</div><div class="label">واجبات مسلّمة</div></div>
+                <div class="stat-item"><div class="value">${examResults.length}</div><div class="label">امتحانات</div></div>
+                <div class="stat-item"><div class="value">${avgScore}%</div><div class="label">متوسط النتائج</div></div>
+            </div>
+            <h3>📝 نتائج الامتحانات</h3>
+            <div class="card table-wrapper">
+                <table><thead><tr><th>الامتحان</th><th>الدرجة</th><th>النسبة</th><th>التاريخ</th></tr></thead>
+                <tbody>${examResults.length ? examResults.map(r => `<tr><td>${r.examName||''}</td><td>${r.score||0}/${r.total||0}</td><td>${r.percentage||0}%</td><td>${r.createdAt?.toDate?.().toLocaleDateString('ar-EG')||''}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;">لا توجد نتائج</td></tr>'}</tbody></table>
+            </div>
             `;
-        } catch(e) {
-            container.innerHTML = '<p>❌ خطأ في تحميل البيانات</p>';
-        }
+        } catch(e) { container.innerHTML = '<div style="text-align:center;padding:40px;">❌ خطأ</div>'; }
     }
     loadProfile();
 
     window.uploadAvatar = function() {
         const msgEl = document.getElementById('uploadMsg');
-        msgEl.className = 'message';
-        msgEl.style.display = 'block';
-        msgEl.textContent = '⏳ جاري فتح نافذة الرفع...';
-        msgEl.classList.add('success');
-
         window.cloudinary.openUploadWidget({
-            cloudName: "deaevfmvm",
-            uploadPreset: "ml_default",
-            apiKey: "864215656447737",
-            sources: ['local', 'camera'],
-            multiple: false,
-            resourceType: 'image',
-            clientAllowedFormats: ['png', 'jpg', 'jpeg'],
-            maxFileSize: 5000000,
-            language: 'ar'
+            cloudName: CLOUDINARY_CLOUD, uploadPreset: CLOUDINARY_PRESET, apiKey: CLOUDINARY_KEY,
+            sources: ['local','camera'], multiple: false, resourceType: 'image',
+            clientAllowedFormats: ['png','jpg','jpeg'], maxFileSize: 5000000, language: 'ar'
         }, async (error, result) => {
-            if (error) {
-                msgEl.className = 'message error';
-                msgEl.textContent = '❌ فشل الرفع: ' + (error.message || 'خطأ غير معروف');
-                return;
-            }
-            if (result && result.event === 'success') {
+            if (!error && result?.event === 'success') {
                 const url = result.info.secure_url;
-                msgEl.className = 'message success';
-                msgEl.textContent = '✅ تم رفع الصورة بنجاح! جاري الحفظ...';
-
-                try {
-                    // تحديث Firestore
-                    await db.collection('students').doc(studentId).update({ avatar: url });
-                    // تحديث localStorage
-                    localStorage.setItem('studentAvatar', url);
-                    msgEl.textContent = '✅ تم حفظ الصورة بنجاح! سيتم التحديث الآن.';
-                    setTimeout(() => loadProfile(), 800);
-                } catch (e) {
-                    msgEl.className = 'message error';
-                    msgEl.textContent = '❌ تم الرفع ولكن فشل الحفظ في قاعدة البيانات: ' + e.message;
-                }
+                await db.collection('students').doc(studentId).update({ avatar: url });
+                localStorage.setItem('studentAvatar', url);
+                msgEl.className = 'message success'; msgEl.style.display = 'block'; msgEl.textContent = '✅ تم تحديث الصورة';
+                loadProfile();
             }
         });
     };
+    window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
 </script>
 </body>
 </html>

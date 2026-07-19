@@ -71,7 +71,6 @@
     const studentId = localStorage.getItem('studentId');
     if (!studentId) window.location.href = 'login.html';
 
-    // تحميل إعدادات المنصة
     (async function loadSettings() {
         const doc = await db.collection('settings').doc('platform').get().catch(() => null);
         if (doc && doc.exists) {
@@ -85,11 +84,7 @@
         const container = document.getElementById('scheduleContent');
         try {
             const userDoc = await db.collection('students').doc(studentId).get();
-            if (!userDoc.exists || userDoc.data().status !== 'مفعل') {
-                localStorage.clear();
-                window.location.href = 'login.html';
-                return;
-            }
+            if (!userDoc.exists || userDoc.data().status !== 'مفعل') { window.location.href='login.html'; return; }
             const grade = userDoc.data().grade || '';
 
             // البحث عن مجموعة الطالب
@@ -97,45 +92,45 @@
             const groupsSnap = await db.collection('groups').where('grade', '==', grade).get().catch(() => ({ empty: true, docs: [] }));
             if (!groupsSnap.empty) {
                 for (const gDoc of groupsSnap.docs) {
-                    if (gDoc.data().students && gDoc.data().students.includes(studentId)) {
+                    if (gDoc.data().students?.includes(studentId)) {
                         groupId = gDoc.id;
                         break;
                     }
                 }
             }
 
-            // جلب الجدول المناسب
+            // جلب الجدول: الأولوية للمجموعة ثم للصف العام
             let schedule = null;
             if (groupId) {
-                const groupSched = await db.collection('schedules')
+                const snap = await db.collection('schedules')
                     .where('groupId', '==', groupId)
                     .orderBy('createdAt', 'desc')
                     .limit(1)
                     .get()
                     .catch(() => ({ empty: true, docs: [] }));
-                if (!groupSched.empty) schedule = groupSched.docs[0].data();
+                if (!snap.empty) schedule = snap.docs[0].data();
             }
 
             if (!schedule) {
-                const gradeSched = await db.collection('schedules')
+                const snap = await db.collection('schedules')
                     .where('grade', '==', grade)
                     .where('groupId', '==', null)
                     .orderBy('createdAt', 'desc')
                     .limit(1)
                     .get()
                     .catch(() => ({ empty: true, docs: [] }));
-                if (!gradeSched.empty) schedule = gradeSched.docs[0].data();
+                if (!snap.empty) schedule = snap.docs[0].data();
             }
 
+            // محاولة أخيرة: أي جدول لنفس الصف
             if (!schedule) {
-                // محاولة أخيرة: جلب أي جدول لنفس الصف بغض النظر عن المجموعة
-                const anySched = await db.collection('schedules')
+                const snap = await db.collection('schedules')
                     .where('grade', '==', grade)
                     .orderBy('createdAt', 'desc')
                     .limit(1)
                     .get()
                     .catch(() => ({ empty: true, docs: [] }));
-                if (!anySched.empty) schedule = anySched.docs[0].data();
+                if (!snap.empty) schedule = snap.docs[0].data();
             }
 
             if (schedule) {

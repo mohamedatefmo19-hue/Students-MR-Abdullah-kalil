@@ -85,8 +85,8 @@
 
     // تحميل إعدادات المنصة
     (async function loadSettings() {
-        const doc = await db.collection('settings').doc('platform').get();
-        if (doc.exists) {
+        const doc = await db.collection('settings').doc('platform').get().catch(() => null);
+        if (doc && doc.exists) {
             const data = doc.data();
             if (data.logo) document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
             if (data.name) document.title = `الواجبات | ${data.name}`;
@@ -103,26 +103,30 @@
 
             // البحث عن مجموعة الطالب
             let groupId = null;
-            const groupsSnap = await db.collection('groups').where('grade','==',grade).get();
-            for (const gDoc of groupsSnap.docs) {
-                if (gDoc.data().students?.includes(studentId)) { groupId = gDoc.id; break; }
+            const groupsSnap = await db.collection('groups').where('grade','==',grade).get().catch(() => ({ empty: true, docs: [] }));
+            if (!groupsSnap.empty) {
+                for (const gDoc of groupsSnap.docs) {
+                    if (gDoc.data().students?.includes(studentId)) { groupId = gDoc.id; break; }
+                }
             }
 
             // جلب الواجبات: إما للمجموعة أو العامة للصف
             let assignments = [];
             if (groupId) {
-                const snap = await db.collection('assignments').where('groupId','==',groupId).get();
-                snap.forEach(doc => assignments.push({id: doc.id, ...doc.data()}));
+                const snap = await db.collection('assignments').where('groupId','==',groupId).get().catch(() => ({ empty: true, docs: [] }));
+                if (!snap.empty) snap.forEach(doc => assignments.push({id: doc.id, ...doc.data()}));
             }
             if (assignments.length === 0) {
-                const snap = await db.collection('assignments').where('grade','==',grade).where('groupId','==',null).get();
-                snap.forEach(doc => assignments.push({id: doc.id, ...doc.data()}));
+                const snap = await db.collection('assignments').where('grade','==',grade).where('groupId','==',null).get().catch(() => ({ empty: true, docs: [] }));
+                if (!snap.empty) snap.forEach(doc => assignments.push({id: doc.id, ...doc.data()}));
             }
 
             // جلب تسليمات الطالب
-            const submissionsSnap = await db.collection('assignmentSubmissions').where('studentId','==',studentId).get();
+            const submissionsSnap = await db.collection('assignmentSubmissions').where('studentId','==',studentId).get().catch(() => ({ empty: true, docs: [] }));
             const submissions = {};
-            submissionsSnap.forEach(doc => { const sub = doc.data(); submissions[sub.assignmentId] = {id: doc.id, ...sub}; });
+            if (!submissionsSnap.empty) {
+                submissionsSnap.forEach(doc => { const sub = doc.data(); submissions[sub.assignmentId] = {id: doc.id, ...sub}; });
+            }
 
             container.innerHTML = assignments.length ? `
                 <div class="assignment-grid">
@@ -173,23 +177,29 @@
                 if (!uploadedImages[assignmentId]) uploadedImages[assignmentId] = [];
                 uploadedImages[assignmentId].push(result.info.secure_url);
                 const preview = document.getElementById('preview-'+assignmentId);
-                preview.innerHTML += `<img src="${result.info.secure_url}" style="width:100px; height:130px; object-fit:cover; border-radius:8px; border:2px solid var(--accent-2);">`;
+                if (preview) preview.innerHTML += `<img src="${result.info.secure_url}" style="width:100px; height:130px; object-fit:cover; border-radius:8px; border:2px solid var(--accent-2);">`;
                 const msg = document.getElementById('msg-'+assignmentId);
-                msg.className = 'message success'; msg.style.display = 'block';
-                msg.textContent = `✅ تم رفع ${uploadedImages[assignmentId].length} صور`;
+                if (msg) { msg.className = 'message success'; msg.style.display = 'block'; msg.textContent = `✅ تم رفع ${uploadedImages[assignmentId].length} صور`; }
             }
         });
     };
     window.submitAssignment = async function(assignmentId) {
         const images = uploadedImages[assignmentId] || [];
         if (images.length === 0) { alert('ارفع صورة واحدة على الأقل'); return; }
-        await db.collection('assignmentSubmissions').add({
-            studentId, assignmentId, images,
-            submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            score: undefined, feedback: ''
-        });
-        alert('✅ تم تسليم الواجب');
-        loadAssignments();
+        try {
+            await db.collection('assignmentSubmissions').add({
+                studentId, assignmentId, images,
+                submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                score: undefined, feedback: ''
+            });
+            alert('✅ تم تسليم الواجب بنجاح');
+            // إعادة تحميل الصفحة لتحديث الحالة
+            uploadedImages[assignmentId] = [];
+            loadAssignments();
+        } catch(e) {
+            console.error(e);
+            alert('❌ فشل تسليم الواجب');
+        }
     };
     window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
 </script>

@@ -101,7 +101,6 @@
             const user = userDoc.data();
             const grade = user.grade || '';
 
-            // البحث عن مجموعة الطالب
             let groupId = null;
             const groupsSnap = await db.collection('groups').where('grade','==',grade).get().catch(() => ({ empty: true, docs: [] }));
             if (!groupsSnap.empty) {
@@ -110,7 +109,6 @@
                 }
             }
 
-            // جلب الواجبات: إما للمجموعة أو العامة للصف
             let assignments = [];
             if (groupId) {
                 const snap = await db.collection('assignments').where('groupId','==',groupId).get().catch(() => ({ empty: true, docs: [] }));
@@ -121,7 +119,6 @@
                 if (!snap.empty) snap.forEach(doc => assignments.push({id: doc.id, ...doc.data()}));
             }
 
-            // جلب تسليمات الطالب
             const submissionsSnap = await db.collection('assignmentSubmissions').where('studentId','==',studentId).get().catch(() => ({ empty: true, docs: [] }));
             const submissions = {};
             if (!submissionsSnap.empty) {
@@ -150,7 +147,7 @@
                                 <div class="upload-area" id="uploadArea-${a.id}">
                                     <p>📷 ارفع صور حلك هنا</p>
                                     <button class="btn btn-primary" onclick="triggerUpload('${a.id}')">رفع صور الحل</button>
-                                    <button class="btn" onclick="submitAssignment('${a.id}')">تسليم الواجب</button>
+                                    <button class="btn" id="submitBtn-${a.id}" onclick="submitAssignment('${a.id}')">تسليم الواجب</button>
                                     <div class="message" id="msg-${a.id}"></div>
                                     <div class="images-row" id="preview-${a.id}"></div>
                                 </div>
@@ -183,24 +180,44 @@
             }
         });
     };
+
     window.submitAssignment = async function(assignmentId) {
         const images = uploadedImages[assignmentId] || [];
-        if (images.length === 0) { alert('ارفع صورة واحدة على الأقل'); return; }
+        const msg = document.getElementById('msg-'+assignmentId);
+        const btn = document.getElementById('submitBtn-'+assignmentId);
+        
+        if (images.length === 0) { 
+            if (msg) { msg.className = 'message error'; msg.style.display = 'block'; msg.textContent = '⚠️ ارفع صورة واحدة على الأقل لحلك'; }
+            else alert('⚠️ ارفع صورة واحدة على الأقل لحلك');
+            return; 
+        }
+        
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التسليم...'; }
+        if (msg) { msg.className = 'message success'; msg.style.display = 'block'; msg.textContent = '⏳ جاري تسليم الواجب...'; }
+
         try {
             await db.collection('assignmentSubmissions').add({
-                studentId, assignmentId, images,
+                studentId: studentId,
+                assignmentId: assignmentId,
+                images: images,
                 submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                score: undefined, feedback: ''
+                score: null,
+                feedback: ''
             });
-            alert('✅ تم تسليم الواجب بنجاح');
-            // إعادة تحميل الصفحة لتحديث الحالة
+            
+            if (msg) { msg.textContent = '✅ تم تسليم الواجب بنجاح!'; }
+            else alert('✅ تم تسليم الواجب بنجاح!');
+            
             uploadedImages[assignmentId] = [];
             loadAssignments();
         } catch(e) {
-            console.error(e);
-            alert('❌ فشل تسليم الواجب');
+            console.error('خطأ في التسليم:', e);
+            if (msg) { msg.className = 'message error'; msg.textContent = '❌ فشل التسليم. حاول مرة أخرى.'; }
+            else alert('❌ فشل التسليم. حاول مرة أخرى.');
+            if (btn) { btn.disabled = false; btn.textContent = 'تسليم الواجب'; }
         }
     };
+    
     window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
 </script>
 </body>

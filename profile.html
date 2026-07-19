@@ -90,8 +90,8 @@
 
     // تحميل إعدادات المنصة
     (async function loadSettings() {
-        const doc = await db.collection('settings').doc('platform').get();
-        if (doc.exists) {
+        const doc = await db.collection('settings').doc('platform').get().catch(() => null);
+        if (doc && doc.exists) {
             const data = doc.data();
             if (data.logo) document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
             if (data.name) document.title = `الملف الشخصي | ${data.name}`;
@@ -107,9 +107,13 @@
             const grade = user.grade || '';
             const avatarUrl = localStorage.getItem('studentAvatar') || user.avatar || '';
 
+            // إحصائيات
             let assignCount = 0, examResults = [];
             try { assignCount = (await db.collection('assignmentSubmissions').where('studentId','==',studentId).get()).size; } catch(e){}
-            try { const snap = await db.collection('examResults').where('studentId','==',studentId).orderBy('createdAt','desc').limit(5).get(); snap.forEach(d => examResults.push(d.data())); } catch(e){}
+            try {
+                const snap = await db.collection('examResults').where('studentId','==',studentId).orderBy('createdAt','desc').limit(10).get();
+                snap.forEach(d => examResults.push({id: d.id, ...d.data()}));
+            } catch(e){}
             const avgScore = examResults.length ? Math.round(examResults.reduce((a,b)=>a+(b.percentage||0),0)/examResults.length) : 0;
 
             container.innerHTML = `
@@ -131,13 +135,13 @@
                 <div class="stat-item"><div class="value">${examResults.length}</div><div class="label">امتحانات</div></div>
                 <div class="stat-item"><div class="value">${avgScore}%</div><div class="label">متوسط النتائج</div></div>
             </div>
-            <h3>📝 نتائج الامتحانات</h3>
+            <h3>📝 نتائج الامتحانات الأخيرة</h3>
             <div class="card table-wrapper">
                 <table><thead><tr><th>الامتحان</th><th>الدرجة</th><th>النسبة</th><th>التاريخ</th></tr></thead>
-                <tbody>${examResults.length ? examResults.map(r => `<tr><td>${r.examName||''}</td><td>${r.score||0}/${r.total||0}</td><td>${r.percentage||0}%</td><td>${r.createdAt?.toDate?.().toLocaleDateString('ar-EG')||''}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;">لا توجد نتائج</td></tr>'}</tbody></table>
+                <tbody>${examResults.length ? examResults.map(r => `<tr><td>${r.examName||''}</td><td>${r.score||0}/${r.total||0}</td><td>${r.percentage||0}%</td><td>${r.createdAt?.toDate?.().toLocaleDateString('ar-EG')||''}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;">لا توجد نتائج بعد</td></tr>'}</tbody></table>
             </div>
             `;
-        } catch(e) { container.innerHTML = '<div style="text-align:center;padding:40px;">❌ خطأ</div>'; }
+        } catch(e) { container.innerHTML = '<div style="text-align:center;padding:40px;">❌ خطأ في تحميل البيانات</div>'; }
     }
     loadProfile();
 

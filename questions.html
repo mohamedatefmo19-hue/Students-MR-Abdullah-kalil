@@ -80,7 +80,6 @@
 
     let currentUser = null;
     async function init() {
-        // تحميل إعدادات المنصة
         const docSnap = await db.collection('settings').doc('platform').get().catch(() => null);
         if (docSnap && docSnap.exists) {
             const data = docSnap.data();
@@ -95,7 +94,7 @@
 
     function loadQuestions() {
         const container = document.getElementById('questionsContent');
-        // ✅ تصفية الأسئلة حسب صف الطالب فقط
+        container.innerHTML = '<div style="text-align:center;padding:40px;">⏳ جاري التحميل...</div>';
         db.collection('questions')
             .where('grade', '==', currentUser.grade)
             .orderBy('createdAt', 'desc')
@@ -108,7 +107,7 @@
                     <div class="card question-card">
                         <div style="display:flex; justify-content:space-between;">
                             <strong>${q.studentName || 'طالب'}</strong>
-                            <span style="color:var(--text-muted); font-size:0.8rem;">${q.createdAt?.toDate?.().toLocaleString('ar-EG') || ''}</span>
+                            <span style="color:var(--text-muted); font-size:0.8rem;">${q.createdAt?.toDate?.().toLocaleString('ar-EG') || '—'}</span>
                         </div>
                         <p style="margin:8px 0;">${q.text || ''}</p>
                         ${q.image ? `<img src="${q.image}" alt="صورة السؤال">` : ''}
@@ -120,7 +119,7 @@
                                 </div>
                             `).join('')}
                         </div>
-                        <button class="btn btn-sm" onclick="showReplyForm('${doc.id}')">رد</button>
+                        <button class="btn btn-sm" onclick="showReplyForm('${doc.id}')">💬 رد</button>
                         <div id="replyForm-${doc.id}" style="display:none; margin-top:8px;">
                             <textarea id="replyText-${doc.id}" class="textarea-field" placeholder="اكتب ردك..."></textarea>
                             <input type="hidden" id="replyImage-${doc.id}">
@@ -139,6 +138,15 @@
                     <button class="btn btn-primary" onclick="submitQuestion()">إرسال السؤال</button>
                 </div>`;
                 container.innerHTML = html;
+            }, error => {
+                console.error('خطأ في تحميل الأسئلة:', error);
+                container.innerHTML = `
+                <div style="text-align:center;padding:40px;color:var(--text-muted);">❌ حدث خطأ في تحميل الأسئلة. تأكد من قواعد Firestore.</div>
+                <div class="card">
+                    <h3>اطرح سؤالاً</h3>
+                    <textarea id="newQuestionText" class="textarea-field" placeholder="اكتب سؤالك..."></textarea>
+                    <button class="btn btn-primary" onclick="submitQuestion()">إرسال السؤال</button>
+                </div>`;
             });
     }
 
@@ -160,7 +168,6 @@
         const text = document.getElementById('newQuestionText').value.trim();
         const image = document.getElementById('newQuestionImage').value;
         if (!text && !image) { alert('اكتب سؤالاً أو ارفع صورة'); return; }
-        // ✅ تخزين الصف مع السؤال
         await db.collection('questions').add({
             studentId: currentUser.id,
             studentName: currentUser.name,

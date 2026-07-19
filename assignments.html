@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الواجبات | مستر عبدالله خليل</title>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+    <style>
+        :root {
+            --bg-deep: #020012; --glass-bg: rgba(255,255,255,0.03); --glass-border: rgba(255,255,255,0.06);
+            --glass-hover: rgba(255,255,255,0.05); --text-primary: #f0f0f7; --text-secondary: #b8b8d4;
+            --text-muted: #6e6e90; --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
+            --accent-1: #4da8da; --accent-2: #7c5ce7; --accent-3: #22d3bb; --accent-5: #fbbf24;
+            --shadow-glow: 0 0 80px rgba(124,92,231,0.25); --radius-sm: 10px; --radius-md: 16px;
+            --radius-lg: 24px; --font: 'Cairo', sans-serif; --transition: 0.3s ease;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
+        .sidebar { width:260px; background:rgba(8,8,28,0.75); backdrop-filter:blur(35px); border-left:1px solid var(--glass-border); padding:24px 14px; flex-shrink:0; z-index:50; overflow-y:auto; }
+        .sidebar .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; margin-bottom:20px; overflow:hidden; }
+        .sidebar .logo-icon img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+        .sidebar nav a { display:block; padding:10px 14px; border-radius:24px; color:var(--text-muted); text-decoration:none; font-size:0.88rem; margin-bottom:4px; }
+        .sidebar nav a.active, .sidebar nav a:hover { background:rgba(255,255,255,0.05); color:#fff; }
+        .main { flex:1; overflow-y:auto; max-height:100vh; }
+        .topbar { padding:14px 24px; display:flex; justify-content:space-between; align-items:center; background:rgba(6,6,26,0.7); backdrop-filter:blur(25px); border-bottom:1px solid var(--glass-border); position:sticky; top:0; }
+        .topbar h2 { background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .btn { padding:8px 16px; border-radius:24px; font-weight:600; font-size:0.8rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; text-decoration:none; transition:var(--transition); }
+        .btn-primary { background:var(--accent-gradient); border:none; color:#fff; }
+        .content { padding:24px; max-width:900px; margin:0 auto; }
+        .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); margin-bottom:16px; }
+        .images-row { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; margin:12px 0; }
+        .images-row img { width:120px; height:160px; object-fit:cover; border-radius:var(--radius-sm); border:2px solid var(--glass-border); transition:var(--transition); }
+        .badge { padding:4px 10px; border-radius:14px; font-size:0.72rem; font-weight:600; display:inline-block; }
+        .badge-pending { background:rgba(251,191,36,0.2); color:#fbbf24; }
+        .badge-submitted { background:rgba(77,168,218,0.2); color:#4da8da; }
+        .badge-corrected { background:rgba(34,211,187,0.2); color:#22d3bb; }
+        .upload-area { border:2px dashed var(--glass-border); border-radius:var(--radius-md); padding:20px; text-align:center; margin-top:12px; }
+        .message { padding:10px 14px; border-radius:20px; margin:10px 0; font-size:0.85rem; display:none; }
+        .message.success { background:rgba(34,211,187,0.15); color:#22d3bb; border:1px solid rgba(34,211,187,0.3); }
+        .message.error { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
+        @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } .images-row img { width:90px; height:120px; } }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="sidebar" id="sidebar">
+    <div class="logo-icon" id="sidebarLogo">ع</div>
+    <nav>
+        <a href="dashboard.html">🏠 الرئيسية</a>
+        <a href="assignments.html" class="active">📄 الواجبات</a>
+        <a href="exams.html">📝 الامتحانات</a>
+        <a href="schedule.html">📅 جداول الحصص</a>
+        <a href="questions.html">💬 الأسئلة</a>
+        <a href="profile.html">👤 حسابي</a>
+        <a href="settings.html">⚙️ الإعدادات</a>
+    </nav>
+</div>
+<div class="main">
+    <div class="topbar">
+        <h2>📄 الواجبات</h2>
+        <div>
+            <a href="dashboard.html" class="btn">رجوع</a>
+            <button class="btn btn-sm" onclick="logout()">تسجيل الخروج</button>
+        </div>
+    </div>
+    <div class="content" id="assignmentsContent">⏳ جاري تحميل الواجبات...</div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDT0xGqGHzyyeB4qcz5AGMKxESCGZNNEWE",
+        authDomain: "abdullah-khalil.firebaseapp.com",
+        projectId: "abdullah-khalil",
+        storageBucket: "abdullah-khalil.firebasestorage.app",
+        messagingSenderId: "530661483867",
+        appId: "1:530661483867:web:e2f165e9f808bcfcb8267e"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const CLOUDINARY_CLOUD = "deaevfmvm", CLOUDINARY_PRESET = "ml_default", CLOUDINARY_KEY = "864215656447737";
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) window.location.href = 'login.html';
+
+    // تحميل إعدادات المنصة
+    (async function loadSettings() {
+        const doc = await db.collection('settings').doc('platform').get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.logo) document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
+            if (data.name) document.title = `الواجبات | ${data.name}`;
+        }
+    })();
+
+    async function loadAssignments() {
+        const container = document.getElementById('assignmentsContent');
+        try {
+            const userDoc = await db.collection('students').doc(studentId).get();
+            if (!userDoc.exists || userDoc.data().status !== 'مفعل') { window.location.href='login.html'; return; }
+            const user = userDoc.data();
+            const grade = user.grade || '';
+
+            // البحث عن مجموعة الطالب
+            let groupId = null;
+            const groupsSnap = await db.collection('groups').where('grade','==',grade).get();
+            for (const gDoc of groupsSnap.docs) {
+                if (gDoc.data().students?.includes(studentId)) { groupId = gDoc.id; break; }
+            }
+
+            // جلب الواجبات: إما للمجموعة أو العامة للصف
+            let assignments = [];
+            if (groupId) {
+                const snap = await db.collection('assignments').where('groupId','==',groupId).get();
+                snap.forEach(doc => assignments.push({id: doc.id, ...doc.data()}));
+            }
+            if (assignments.length === 0) {
+                const snap = await db.collection('assignments').where('grade','==',grade).where('groupId','==',null).get();
+                snap.forEach(doc => assignments.push({id: doc.id, ...doc.data()}));
+            }
+
+            // جلب تسليمات الطالب
+            const submissionsSnap = await db.collection('assignmentSubmissions').where('studentId','==',studentId).get();
+            const submissions = {};
+            submissionsSnap.forEach(doc => { const sub = doc.data(); submissions[sub.assignmentId] = {id: doc.id, ...sub}; });
+
+            container.innerHTML = assignments.length ? `
+                <div class="assignment-grid">
+                    ${assignments.map((a, idx) => {
+                        const sub = submissions[a.id];
+                        const status = sub ? (sub.score !== undefined ? 'corrected' : 'submitted') : 'pending';
+                        const statusText = status === 'corrected' ? 'تم التصحيح' : status === 'submitted' ? 'تم التسليم' : 'لم يسلم بعد';
+                        const badgeClass = status === 'corrected' ? 'badge-corrected' : status === 'submitted' ? 'badge-submitted' : 'badge-pending';
+                        return `
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h3>الواجب ${idx+1}: ${a.title || 'بدون عنوان'}</h3>
+                                <span class="badge ${badgeClass}">${statusText}</span>
+                            </div>
+                            ${a.images?.length ? `<div class="images-row">${a.images.map(img => `<img src="${img}" alt="صورة السؤال">`).join('')}</div>` : ''}
+                            ${sub ? `
+                                <p style="color:var(--text-muted);">📤 حل مرفوع سابقاً</p>
+                                ${sub.images?.length ? `<div class="images-row">${sub.images.map(img => `<img src="${img}" alt="الحل">`).join('')}</div>` : ''}
+                                ${sub.score !== undefined ? `<p style="color:var(--accent-3);">✅ الدرجة: ${sub.score} | تعليق: ${sub.feedback || 'لا يوجد'}</p>` : '<p style="color:var(--accent-5);">⏳ بانتظار التصحيح</p>'}
+                            ` : `
+                                <div class="upload-area" id="uploadArea-${a.id}">
+                                    <p>📷 ارفع صور حلك هنا</p>
+                                    <button class="btn btn-primary" onclick="triggerUpload('${a.id}')">رفع صور الحل</button>
+                                    <button class="btn" onclick="submitAssignment('${a.id}')">تسليم الواجب</button>
+                                    <div class="message" id="msg-${a.id}"></div>
+                                    <div class="images-row" id="preview-${a.id}"></div>
+                                </div>
+                            `}
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : '<div class="card"><p style="text-align:center; color:var(--text-muted);">لا توجد واجبات حالياً</p></div>';
+        } catch(e) {
+            container.innerHTML = '<div class="card"><p style="text-align:center;">❌ حدث خطأ في تحميل الواجبات</p></div>';
+        }
+    }
+    loadAssignments();
+
+    const uploadedImages = {};
+    window.triggerUpload = function(assignmentId) {
+        window.cloudinary.openUploadWidget({
+            cloudName: CLOUDINARY_CLOUD, uploadPreset: CLOUDINARY_PRESET, apiKey: CLOUDINARY_KEY,
+            sources: ['local','camera'], multiple: true, resourceType: 'image',
+            clientAllowedFormats: ['png','jpg','jpeg'], maxFileSize: 5000000, language: 'ar'
+        }, (error, result) => {
+            if (!error && result?.event === 'success') {
+                if (!uploadedImages[assignmentId]) uploadedImages[assignmentId] = [];
+                uploadedImages[assignmentId].push(result.info.secure_url);
+                const preview = document.getElementById('preview-'+assignmentId);
+                preview.innerHTML += `<img src="${result.info.secure_url}" style="width:100px; height:130px; object-fit:cover; border-radius:8px; border:2px solid var(--accent-2);">`;
+                const msg = document.getElementById('msg-'+assignmentId);
+                msg.className = 'message success'; msg.style.display = 'block';
+                msg.textContent = `✅ تم رفع ${uploadedImages[assignmentId].length} صور`;
+            }
+        });
+    };
+    window.submitAssignment = async function(assignmentId) {
+        const images = uploadedImages[assignmentId] || [];
+        if (images.length === 0) { alert('ارفع صورة واحدة على الأقل'); return; }
+        await db.collection('assignmentSubmissions').add({
+            studentId, assignmentId, images,
+            submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            score: undefined, feedback: ''
+        });
+        alert('✅ تم تسليم الواجب');
+        loadAssignments();
+    };
+    window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
+</script>
+</body>
+</html>

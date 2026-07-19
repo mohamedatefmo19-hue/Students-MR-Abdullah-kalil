@@ -9,11 +9,21 @@
     <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
     <style>
         :root {
-            --bg-deep: #020012; --glass-bg: rgba(255,255,255,0.03); --glass-border: rgba(255,255,255,0.06);
-            --glass-hover: rgba(255,255,255,0.05); --text-primary: #f0f0f7; --text-secondary: #b8b8d4;
-            --text-muted: #6e6e90; --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
-            --accent-1: #4da8da; --accent-2: #7c5ce7; --accent-3: #22d3bb; --radius-lg: 24px; --radius-md: 16px;
-            --font: 'Cairo', sans-serif; --transition: 0.3s ease;
+            --bg-deep: #020012;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-hover: rgba(255, 255, 255, 0.05);
+            --text-primary: #f0f0f7;
+            --text-secondary: #b8b8d4;
+            --text-muted: #6e6e90;
+            --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
+            --accent-1: #4da8da;
+            --accent-2: #7c5ce7;
+            --accent-3: #22d3bb;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --font: 'Cairo', sans-serif;
+            --transition: 0.3s ease;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
@@ -79,6 +89,7 @@
     if (!studentId) window.location.href = 'login.html';
 
     let currentUser = null;
+
     async function init() {
         const docSnap = await db.collection('settings').doc('platform').get().catch(() => null);
         if (docSnap && docSnap.exists) {
@@ -95,13 +106,35 @@
     function loadQuestions() {
         const container = document.getElementById('questionsContent');
         container.innerHTML = '<div style="text-align:center;padding:40px;">⏳ جاري التحميل...</div>';
+
         db.collection('questions')
             .where('grade', '==', currentUser.grade)
-            .orderBy('createdAt', 'desc')
             .onSnapshot(snap => {
+                const questions = [];
+                snap.forEach(doc => questions.push({ id: doc.id, ...doc.data() }));
+
+                questions.sort((a, b) => {
+                    const timeA = a.createdAt?.seconds || 0;
+                    const timeB = b.createdAt?.seconds || 0;
+                    return timeB - timeA;
+                });
+
+                if (questions.length === 0) {
+                    container.innerHTML = `
+                    <div style="text-align:center;padding:40px;color:var(--text-muted);">لا توجد أسئلة بعد في صفك</div>
+                    <div class="card">
+                        <h3>اطرح سؤالاً</h3>
+                        <textarea id="newQuestionText" class="textarea-field" placeholder="اكتب سؤالك..."></textarea>
+                        <input type="hidden" id="newQuestionImage">
+                        <button class="upload-btn" onclick="uploadQuestionImage()">📷 رفع صورة</button>
+                        <div class="message" id="newQuestionMsg"></div>
+                        <button class="btn btn-primary" onclick="submitQuestion()">إرسال السؤال</button>
+                    </div>`;
+                    return;
+                }
+
                 let html = '';
-                snap.forEach(doc => {
-                    const q = doc.data();
+                questions.forEach(q => {
                     const replies = q.replies || [];
                     html += `
                     <div class="card question-card">
@@ -119,15 +152,16 @@
                                 </div>
                             `).join('')}
                         </div>
-                        <button class="btn btn-sm" onclick="showReplyForm('${doc.id}')">💬 رد</button>
-                        <div id="replyForm-${doc.id}" style="display:none; margin-top:8px;">
-                            <textarea id="replyText-${doc.id}" class="textarea-field" placeholder="اكتب ردك..."></textarea>
-                            <input type="hidden" id="replyImage-${doc.id}">
-                            <button class="upload-btn" onclick="uploadReplyImage('${doc.id}')">📷 صورة</button>
-                            <button class="btn btn-primary btn-sm" onclick="submitReply('${doc.id}')">إرسال الرد</button>
+                        <button class="btn btn-sm" onclick="showReplyForm('${q.id}')">💬 رد</button>
+                        <div id="replyForm-${q.id}" style="display:none; margin-top:8px;">
+                            <textarea id="replyText-${q.id}" class="textarea-field" placeholder="اكتب ردك..."></textarea>
+                            <input type="hidden" id="replyImage-${q.id}">
+                            <button class="upload-btn" onclick="uploadReplyImage('${q.id}')">📷 صورة</button>
+                            <button class="btn btn-primary btn-sm" onclick="submitReply('${q.id}')">إرسال الرد</button>
                         </div>
                     </div>`;
                 });
+
                 html += `
                 <div class="card">
                     <h3>اطرح سؤالاً</h3>
@@ -137,6 +171,7 @@
                     <div class="message" id="newQuestionMsg"></div>
                     <button class="btn btn-primary" onclick="submitQuestion()">إرسال السؤال</button>
                 </div>`;
+
                 container.innerHTML = html;
             }, error => {
                 console.error('خطأ في تحميل الأسئلة:', error);

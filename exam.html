@@ -4,293 +4,203 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الامتحان | مستر عبدالله خليل</title>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
-            --bg-primary: #0a0a1a;
-            --bg-secondary: #0f0f28;
-            --glass-bg: rgba(255, 255, 255, 0.04);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-hover: rgba(255, 255, 255, 0.07);
-            --text-primary: #f0f0f5;
-            --text-secondary: #b0b0c8;
-            --text-muted: #70708a;
-            --accent-gradient: linear-gradient(135deg, #4da8da 0%, #7c5ce7 50%, #22d3bb 100%);
-            --shadow-glow: 0 0 40px rgba(124, 92, 231, 0.3);
-            --radius-sm: 10px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
-            --radius-xl: 32px;
-            --font-ar: 'Cairo', 'Tajawal', sans-serif;
-            --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --bg-deep: #020012; --glass-bg: rgba(255,255,255,0.03); --glass-border: rgba(255,255,255,0.06);
+            --text-primary: #f0f0f7; --text-secondary: #b8b8d4; --text-muted: #6e6e90;
+            --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
+            --accent-1: #4da8da; --accent-2: #7c5ce7; --accent-3: #22d3bb; --danger: #ef4444;
+            --radius-lg: 24px; --radius-md: 16px; --font: 'Cairo', sans-serif;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; font-size: 16px; }
-        body {
-            font-family: var(--font-ar);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.7;
-            overflow-x: hidden;
-            position: relative;
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            padding-bottom: 70px;
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:20px; }
+        .timer-bar {
+            position:sticky; top:10px; z-index:100; background:rgba(10,10,30,0.9); backdrop-filter:blur(20px);
+            border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:12px 24px;
+            display:flex; justify-content:space-between; align-items:center; width:90%; max-width:800px; margin-bottom:20px;
         }
-        .aurora-bg { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
-        .aurora-bg .orb { position: absolute; border-radius:50%; filter:blur(120px); opacity:0.22; animation:auroraFloat 20s infinite ease-in-out; }
-        .aurora-bg .orb:nth-child(1) { width:600px; height:600px; background:radial-gradient(circle, #4da8da 0%, transparent 70%); top:-200px; left:-150px; }
-        .aurora-bg .orb:nth-child(2) { width:500px; height:500px; background:radial-gradient(circle, #7c5ce7 0%, transparent 70%); bottom:-150px; right:-150px; animation-delay:-7s; }
-        @keyframes auroraFloat { 0%,100%{transform:translate(0,0) scale(1);} 25%{transform:translate(60px,-40px) scale(1.1);} 50%{transform:translate(-30px,50px) scale(0.9);} 75%{transform:translate(-50px,-30px) scale(1.05);} }
-        .main-content { position:relative; z-index:1; }
-        .navbar { position:sticky; top:0; z-index:1000; background:rgba(10,10,26,0.8); backdrop-filter:blur(30px); border-bottom:1px solid var(--glass-border); padding:0 24px; }
-        .navbar-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:64px; gap:16px; }
-        .navbar-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
-        .navbar-logo .logo-icon { width:40px; height:40px; border-radius:var(--radius-sm); background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
-        .btn { padding:8px 18px; border-radius:30px; font-family:var(--font-ar); font-weight:600; font-size:0.85rem; border:none; cursor:pointer; transition:var(--transition-smooth); background:transparent; color:var(--text-primary); border:1.5px solid var(--glass-border); text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+        .timer { font-size:2rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .exam-container { width:90%; max-width:800px; display:flex; flex-direction:column; gap:16px; }
+        .card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; backdrop-filter:blur(15px); }
+        .question-card img { max-width:100%; max-height:300px; border-radius:var(--radius-md); margin-bottom:12px; object-fit:contain; }
+        .options { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+        .option {
+            padding:12px 16px; border-radius:var(--radius-md); border:2px solid var(--glass-border);
+            cursor:pointer; transition:0.2s; display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.02);
+        }
+        .option:hover, .option.selected { border-color:var(--accent-2); background:rgba(124,92,231,0.1); }
+        .option.selected { border-color:var(--accent-3); }
+        .btn { padding:10px 20px; border-radius:24px; font-weight:600; font-size:0.9rem; border:1.5px solid var(--glass-border); background:transparent; color:var(--text-primary); cursor:pointer; transition:0.3s; text-decoration:none; }
         .btn-primary { background:var(--accent-gradient); border:none; color:#fff; }
-        .exam-content { padding:24px; max-width:900px; margin:0 auto; }
-        .timer-bar { background:rgba(0,0,0,0.6); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:16px 24px; margin-bottom:24px; backdrop-filter:blur(10px); display:flex; justify-content:space-between; align-items:center; }
-        .timer-display { font-size:2rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .progress-indicator { margin-bottom:24px; color:var(--text-muted); }
-        .question-card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:28px; backdrop-filter:blur(10px); margin-bottom:20px; }
-        .question-image { max-width:100%; max-height:300px; border-radius:var(--radius-md); margin-bottom:16px; object-fit:contain; }
-        .options-list { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
-        .option-item { display:flex; align-items:center; gap:12px; padding:12px 18px; border-radius:var(--radius-md); border:1.5px solid var(--glass-border); cursor:pointer; transition:0.2s; background:rgba(255,255,255,0.02); }
-        .option-item:hover, .option-item.selected { border-color:var(--accent-2); background:rgba(124,92,231,0.1); }
-        .option-radio { width:20px; height:20px; border-radius:50%; border:2px solid var(--glass-border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .option-item.selected .option-radio { border-color:var(--accent-2); background:var(--accent-gradient); }
-        .nav-buttons { display:flex; gap:12px; justify-content:space-between; margin-top:20px; flex-wrap:wrap; }
-        .result-screen { text-align:center; padding:40px; }
-        .result-score { font-size:4rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .btn-danger { background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.4); color:#f87171; }
         .empty-state { text-align:center; padding:60px; color:var(--text-muted); }
-        .bottom-nav { display:none; position:fixed; bottom:0; left:0; width:100%; background:rgba(15,15,40,0.9); backdrop-filter:blur(25px); border-top:1px solid var(--glass-border); z-index:1000; padding:8px 16px 12px; justify-content:space-around; align-items:center; }
-        .bottom-nav a { display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; color:var(--text-muted); font-size:0.7rem; }
-        .bottom-nav a.active, .bottom-nav a:hover { color:var(--accent-1); }
-        @media (max-width:768px) { .bottom-nav { display:flex; } .timer-display { font-size:1.5rem; } }
+        .result-score { font-size:3rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; margin-bottom:20px; overflow:hidden; }
+        .logo-icon img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+        @media (max-width:600px) { .options { grid-template-columns:1fr; } }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="aurora-bg"><div class="orb"></div><div class="orb"></div></div>
-<div class="main-content">
-    <nav class="navbar">
-        <div class="navbar-inner">
-            <a href="index.html" class="navbar-logo"><div class="logo-icon">ع</div><span>مستر عبدالله خليل</span></a>
-            <div><a href="exams.html" class="btn btn-sm">العودة للامتحانات</a></div>
-        </div>
-    </nav>
-    <div class="exam-content" id="examContent">
-        <div class="empty-state">⏳ جاري تحميل الامتحان...</div>
-    </div>
+<div class="aurora" style="position:fixed; inset:0; pointer-events:none; z-index:0;">
+    <div class="orb" style="position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; width:700px; height:700px; background:#4da8da; top:-250px; left:-200px;"></div>
+    <div class="orb" style="position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; width:550px; height:550px; background:#7c5ce7; bottom:-200px; right:-180px;"></div>
 </div>
-<nav class="bottom-nav">
-    <a href="dashboard.html"><span>🏠</span><span>الرئيسية</span></a>
-    <a href="courses.html"><span>📚</span><span>كورساتي</span></a>
-    <a href="exams.html" class="active"><span>📝</span><span>الامتحانات</span></a>
-    <a href="profile.html"><span>👤</span><span>حسابي</span></a>
-</nav>
+
+<div class="timer-bar">
+    <span>⏱️ الوقت المتبقي</span>
+    <span class="timer" id="timerDisplay">60:00</span>
+    <span id="attemptInfo" style="color:var(--text-muted);"></span>
+</div>
+<div class="exam-container" id="examContainer">
+    <div class="empty-state">⏳ جاري تحميل الامتحان...</div>
+</div>
 
 <script>
-    (function() {
-        const firebaseConfig = {
-            apiKey: "AIzaSyDT0xGqGHzyyeB4qcz5AGMKxESCGZNNEWE",
-            authDomain: "abdullah-khalil.firebaseapp.com",
-            projectId: "abdullah-khalil",
-            storageBucket: "abdullah-khalil.firebasestorage.app",
-            messagingSenderId: "530661483867",
-            appId: "1:530661483867:web:e2f165e9f808bcfcb8267e"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+    const firebaseConfig = {
+        apiKey: "AIzaSyDT0xGqGHzyyeB4qcz5AGMKxESCGZNNEWE",
+        authDomain: "abdullah-khalil.firebaseapp.com",
+        projectId: "abdullah-khalil",
+        storageBucket: "abdullah-khalil.firebasestorage.app",
+        messagingSenderId: "530661483867",
+        appId: "1:530661483867:web:e2f165e9f808bcfcb8267e"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const examId = urlParams.get('id');
+    const studentId = localStorage.getItem('studentId');
+    const urlParams = new URLSearchParams(window.location.search);
+    const examId = urlParams.get('id');
+    if (!studentId || !examId) { alert('بيانات ناقصة'); window.location.href = 'login.html'; }
 
-        let examData = null;
-        let questions = [];
-        let currentIndex = 0;
-        let userAnswers = {};
-        let timerInterval = null;
-        let timeLeft = 0;
-        let examSubmitted = false;
-
-        if (!examId) {
-            document.getElementById('examContent').innerHTML = '<div class="empty-state">⚠️ لم يتم تحديد امتحان</div>';
-        } else {
-            loadExam(examId);
-        }
-
-        async function loadExam(id) {
-            try {
-                const doc = await db.collection('exams').doc(id).get();
-                if (!doc.exists) {
-                    document.getElementById('examContent').innerHTML = '<div class="empty-state">❌ الامتحان غير موجود</div>';
-                    return;
-                }
-                examData = { id: doc.id, ...doc.data() };
-                // خلط الأسئلة عشوائياً
-                questions = examData.questions ? [...examData.questions].sort(() => Math.random() - 0.5) : [];
-                timeLeft = (parseInt(examData.time) || 30) * 60; // بالثواني
-                if (questions.length === 0) {
-                    document.getElementById('examContent').innerHTML = '<div class="empty-state">لا توجد أسئلة في هذا الامتحان</div>';
-                    return;
-                }
-                startExam();
-            } catch (e) {
-                console.error(e);
-                document.getElementById('examContent').innerHTML = '<div class="empty-state">❌ حدث خطأ</div>';
-            }
-        }
-
-        function startExam() {
-            examSubmitted = false;
-            renderExam();
-            startTimer();
-        }
-
-        function startTimer() {
-            updateTimerDisplay();
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                updateTimerDisplay();
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    submitExam();
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            const display = document.getElementById('timerDisplay');
-            if (display) {
-                display.textContent = `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-            }
-        }
-
-        function renderExam() {
-            if (examSubmitted) return;
-            const q = questions[currentIndex];
-            const selected = userAnswers[q.id] !== undefined ? userAnswers[q.id] : -1;
-            const html = `
-                <div class="timer-bar">
-                    <span>⏱️ الوقت المتبقي</span>
-                    <span class="timer-display" id="timerDisplay"></span>
-                </div>
-                <div class="progress-indicator">
-                    سؤال ${currentIndex + 1} من ${questions.length}
-                </div>
-                <div class="question-card">
-                    ${q.image ? `<img class="question-image" src="${q.image}" alt="صورة السؤال" onerror="this.style.display='none';">` : ''}
-                    <h3 style="margin-bottom:16px;">${q.text || 'السؤال بدون نص'}</h3>
-                    <div class="options-list">
-                        ${['أ','ب','ج','د'].map((opt, idx) => `
-                            <div class="option-item ${selected === idx ? 'selected' : ''}" onclick="selectAnswer('${q.id}', ${idx})">
-                                <div class="option-radio"></div>
-                                <span>${opt}. ${q.options[idx] || 'اختيار ' + opt}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="nav-buttons">
-                        <button class="btn" onclick="prevQuestion()" ${currentIndex === 0 ? 'disabled' : ''}>▶ السابق</button>
-                        <button class="btn btn-primary" onclick="nextQuestion()">${currentIndex === questions.length - 1 ? 'إنهاء الامتحان' : 'التالي ◀'}</button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('examContent').innerHTML = html;
-            updateTimerDisplay();
-        }
-
-        window.selectAnswer = function(qId, idx) {
-            userAnswers[qId] = idx;
-            renderExam();
-        };
-
-        window.prevQuestion = function() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                renderExam();
-            }
-        };
-
-        window.nextQuestion = function() {
-            if (currentIndex < questions.length - 1) {
-                currentIndex++;
-                renderExam();
-            } else {
-                if (confirm('هل أنت متأكد من إنهاء الامتحان؟ لا يمكنك العودة بعد ذلك.')) {
-                    submitExam();
-                }
-            }
-        };
-
-        function submitExam() {
-            if (examSubmitted) return;
-            examSubmitted = true;
-            clearInterval(timerInterval);
-
-            let correctCount = 0;
-            questions.forEach(q => {
-                if (userAnswers[q.id] === q.correct) correctCount++;
-            });
-            const total = questions.length;
-            const percentage = Math.round((correctCount / total) * 100);
-
-            // حفظ النتيجة في Firestore
-            auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    try {
-                        await db.collection('examResults').add({
-                            studentId: user.uid,
-                            examId: examData.id,
-                            examName: examData.name,
-                            score: correctCount,
-                            total: total,
-                            percentage: percentage,
-                            answers: userAnswers,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    } catch (e) { console.error('حفظ النتيجة:', e); }
-                }
-            });
-
-            renderResult(correctCount, total, percentage);
-        }
-
-        function renderResult(correct, total, percentage) {
-            const html = `
-                <div class="result-screen question-card">
-                    <h2>🎉 انتهى الامتحان</h2>
-                    <div class="result-score">${correct}/${total}</div>
-                    <p style="font-size:1.2rem;">النسبة: ${percentage}%</p>
-                    <p style="color:var(--text-secondary); margin:16px 0;">إجابات صحيحة: ${correct} | إجابات خاطئة: ${total - correct}</p>
-                    ${examData.showAnswer !== false ? `
-                        <div style="text-align:right; margin-top:20px;">
-                            <h4>مراجعة الإجابات:</h4>
-                            ${questions.map((q, i) => `
-                                <div style="margin:8px 0; padding:8px; background:rgba(255,255,255,0.03); border-radius:8px;">
-                                    <strong>${i+1}. ${q.text}</strong><br>
-                                    إجابتك: ${userAnswers[q.id] !== undefined ? ['أ','ب','ج','د'][userAnswers[q.id]] : 'لم تجب'} |
-                                    الصحيحة: ${['أ','ب','ج','د'][q.correct]}
-                                    ${userAnswers[q.id] === q.correct ? ' ✅' : ' ❌'}
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                    <div style="margin-top:20px;">
-                        <a href="exams.html" class="btn btn-primary">العودة للامتحانات</a>
-                    </div>
-                </div>
-            `;
-            document.getElementById('examContent').innerHTML = html;
+    // تحميل إعدادات المنصة
+    (async function loadSettings() {
+        const doc = await db.collection('settings').doc('platform').get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.name) document.title = `الامتحان | ${data.name}`;
         }
     })();
+
+    let examData = null, questions = [], currentIndex = 0, userAnswers = {};
+    let timerInterval = null, timeLeft = 3600, examSubmitted = false;
+    let attemptCount = 0;
+    const MAX_ATTEMPTS = 3;
+
+    async function init() {
+        const container = document.getElementById('examContainer');
+        try {
+            const doc = await db.collection('exams').doc(examId).get();
+            if (!doc.exists) { container.innerHTML = '<div class="empty-state">❌ الامتحان غير موجود</div>'; return; }
+            examData = doc.data();
+            const attemptsSnap = await db.collection('examResults')
+                .where('studentId','==',studentId).where('examId','==',examId).get();
+            attemptCount = attemptsSnap.size;
+            if (attemptCount >= MAX_ATTEMPTS) {
+                container.innerHTML = '<div class="empty-state">❌ استنفدت جميع المحاولات (3 كحد أقصى)</div>';
+                return;
+            }
+            document.getElementById('attemptInfo').textContent = `المحاولة ${attemptCount+1} من ${MAX_ATTEMPTS}`;
+            questions = examData.questions ? [...examData.questions].sort(() => Math.random()-0.5) : [];
+            if (!questions.length) { container.innerHTML = '<div class="empty-state">❌ لا توجد أسئلة</div>'; return; }
+            startExam();
+        } catch(e) { container.innerHTML = '<div class="empty-state">❌ خطأ في تحميل الامتحان</div>'; }
+    }
+
+    function startExam() {
+        timeLeft = (parseInt(examData.time)||60)*60;
+        examSubmitted = false; userAnswers = {}; currentIndex = 0;
+        renderQuestion(); startTimer();
+        window.addEventListener('beforeunload', warnBeforeLeave);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    function startTimer() {
+        updateTimer();
+        timerInterval = setInterval(() => { timeLeft--; updateTimer(); if(timeLeft<=0) submitExam('انتهى الوقت'); }, 1000);
+    }
+
+    function updateTimer() {
+        const m = Math.floor(timeLeft/60), s = timeLeft%60;
+        document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function warnBeforeLeave(e) { if(!examSubmitted) { e.preventDefault(); e.returnValue=''; } }
+    function handleVisibilityChange() { if(document.hidden && !examSubmitted) submitExam('تم الخروج من الامتحان'); }
+
+    function renderQuestion() {
+        if(examSubmitted || currentIndex>=questions.length) return;
+        const q = questions[currentIndex];
+        const selected = userAnswers[q.id];
+        const container = document.getElementById('examContainer');
+        container.innerHTML = `
+        <div class="card question-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                <span>سؤال ${currentIndex+1} من ${questions.length}</span>
+                <div>
+                    <button class="btn btn-sm" onclick="prevQ()" ${currentIndex===0?'disabled':''}>السابق</button>
+                    <button class="btn btn-sm btn-primary" onclick="nextQ()">${currentIndex===questions.length-1?'إنهاء':'التالي'}</button>
+                </div>
+            </div>
+            ${q.image ? `<img src="${q.image}" alt="صورة السؤال">` : ''}
+            <h3 style="margin-bottom:12px;">${q.text || 'السؤال بدون نص'}</h3>
+            <div class="options">
+                ${q.options.map((opt,idx) => {
+                    const letter = ['أ','ب','ج','د'][idx];
+                    return `<div class="option ${selected===idx?'selected':''}" onclick="selectAnswer('${q.id}',${idx})"><span style="font-weight:bold; width:24px;">${letter}.</span> ${opt}</div>`;
+                }).join('')}
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            ${questions.map((_,i) => `<span style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; cursor:pointer; background:${userAnswers[questions[i].id]!==undefined?'var(--accent-2)':'var(--glass-bg)'}; border:1px solid var(--glass-border);" onclick="goTo(${i})">${i+1}</span>`).join('')}
+        </div>
+        <button class="btn btn-danger" style="margin-top:16px; width:100%;" onclick="submitExam('تسليم يدوي')">تسليم الامتحان</button>`;
+    }
+
+    window.selectAnswer = (qId, idx) => { userAnswers[qId] = idx; renderQuestion(); };
+    window.nextQ = () => { if(currentIndex<questions.length-1) { currentIndex++; renderQuestion(); } else { if(confirm('هل أنت متأكد من إنهاء الامتحان؟')) submitExam('تسليم يدوي'); } };
+    window.prevQ = () => { if(currentIndex>0) { currentIndex--; renderQuestion(); } };
+    window.goTo = (i) => { currentIndex = i; renderQuestion(); };
+
+    function submitExam(reason) {
+        if(examSubmitted) return;
+        examSubmitted = true; clearInterval(timerInterval);
+        window.removeEventListener('beforeunload', warnBeforeLeave);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        let correct=0, total=questions.length;
+        questions.forEach(q => { if(userAnswers[q.id]!==undefined && userAnswers[q.id]===q.correct) correct++; });
+        const percentage = Math.round((correct/total)*100);
+        db.collection('examResults').add({
+            studentId, examId: examData.id||examId, examName: examData.name||'',
+            score: correct, total, percentage, answers: userAnswers, reason,
+            attempt: attemptCount+1, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(e => console.error(e));
+        renderResult(correct, total, percentage, reason);
+    }
+    window.submitExam = submitExam;
+
+    function renderResult(correct, total, percentage, reason) {
+        document.getElementById('examContainer').innerHTML = `
+        <div class="card" style="text-align:center;">
+            <h2>🎉 انتهى الامتحان</h2><p style="color:var(--text-muted);">${reason}</p>
+            <div class="result-score">${correct}/${total}</div><p>النسبة: ${percentage}%</p>
+            ${attemptCount+1 < MAX_ATTEMPTS ? `<button class="btn btn-primary" onclick="retryExam()">إعادة المحاولة (${attemptCount+2}/${MAX_ATTEMPTS})</button>` : '<p>لا توجد محاولات متبقية</p>'}
+            <a href="exams.html" class="btn" style="display:inline-block; margin-top:12px;">العودة للامتحانات</a>
+        </div>`;
+    }
+
+    window.retryExam = () => {
+        clearInterval(timerInterval);
+        window.removeEventListener('beforeunload', warnBeforeLeave);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        examSubmitted = false;
+        questions = examData.questions ? [...examData.questions].sort(() => Math.random()-0.5) : [];
+        startExam();
+    };
+
+    init();
 </script>
 </body>
 </html>

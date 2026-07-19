@@ -8,9 +8,14 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
-            --bg-deep: #020012; --glass-bg: rgba(255,255,255,0.03); --glass-border: rgba(255,255,255,0.06);
-            --text-primary: #f0f0f7; --text-muted: #6e6e90; --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
-            --radius-lg: 24px; --font: 'Cairo', sans-serif;
+            --bg-deep: #020012;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --text-primary: #f0f0f7;
+            --text-muted: #6e6e90;
+            --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
+            --radius-lg: 24px;
+            --font: 'Cairo', sans-serif;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:var(--font); background:var(--bg-deep); color:var(--text-primary); display:flex; min-height:100vh; }
@@ -68,8 +73,8 @@
 
     // تحميل إعدادات المنصة
     (async function loadSettings() {
-        const doc = await db.collection('settings').doc('platform').get();
-        if (doc.exists) {
+        const doc = await db.collection('settings').doc('platform').get().catch(() => null);
+        if (doc && doc.exists) {
             const data = doc.data();
             if (data.logo) document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
             if (data.name) document.title = `جداول الحصص | ${data.name}`;
@@ -80,34 +85,71 @@
         const container = document.getElementById('scheduleContent');
         try {
             const userDoc = await db.collection('students').doc(studentId).get();
-            if (!userDoc.exists || userDoc.data().status !== 'مفعل') { window.location.href='login.html'; return; }
+            if (!userDoc.exists || userDoc.data().status !== 'مفعل') {
+                localStorage.clear();
+                window.location.href = 'login.html';
+                return;
+            }
             const grade = userDoc.data().grade || '';
 
             // البحث عن مجموعة الطالب
             let groupId = null;
-            const groupsSnap = await db.collection('groups').where('grade','==',grade).get();
-            for (const gDoc of groupsSnap.docs) {
-                if (gDoc.data().students?.includes(studentId)) { groupId = gDoc.id; break; }
+            const groupsSnap = await db.collection('groups').where('grade', '==', grade).get().catch(() => ({ empty: true, docs: [] }));
+            if (!groupsSnap.empty) {
+                for (const gDoc of groupsSnap.docs) {
+                    if (gDoc.data().students && gDoc.data().students.includes(studentId)) {
+                        groupId = gDoc.id;
+                        break;
+                    }
+                }
             }
 
+            // جلب الجدول المناسب
             let schedule = null;
             if (groupId) {
-                const snap = await db.collection('schedules').where('groupId','==',groupId).orderBy('createdAt','desc').limit(1).get();
-                if (!snap.empty) schedule = snap.docs[0].data();
-            }
-            if (!schedule) {
-                const snap = await db.collection('schedules').where('grade','==',grade).where('groupId','==',null).orderBy('createdAt','desc').limit(1).get();
-                if (!snap.empty) schedule = snap.docs[0].data();
+                const groupSched = await db.collection('schedules')
+                    .where('groupId', '==', groupId)
+                    .orderBy('createdAt', 'desc')
+                    .limit(1)
+                    .get()
+                    .catch(() => ({ empty: true, docs: [] }));
+                if (!groupSched.empty) schedule = groupSched.docs[0].data();
             }
 
-            container.innerHTML = schedule ? `
-                <div class="card">
-                    <h3>جدول حصص ${grade}</h3>
-                    ${schedule.image ? `<img src="${schedule.image}" alt="جدول الحصص" class="schedule-img">` : '<div class="empty-state">لا توجد صورة للجدول</div>'}
-                </div>
-            ` : '<div class="empty-state">لا يوجد جدول حصص لمجموعتك أو صفك حالياً</div>';
-        } catch(e) {
-            container.innerHTML = '<div class="empty-state">❌ خطأ في التحميل</div>';
+            if (!schedule) {
+                const gradeSched = await db.collection('schedules')
+                    .where('grade', '==', grade)
+                    .where('groupId', '==', null)
+                    .orderBy('createdAt', 'desc')
+                    .limit(1)
+                    .get()
+                    .catch(() => ({ empty: true, docs: [] }));
+                if (!gradeSched.empty) schedule = gradeSched.docs[0].data();
+            }
+
+            if (!schedule) {
+                // محاولة أخيرة: جلب أي جدول لنفس الصف بغض النظر عن المجموعة
+                const anySched = await db.collection('schedules')
+                    .where('grade', '==', grade)
+                    .orderBy('createdAt', 'desc')
+                    .limit(1)
+                    .get()
+                    .catch(() => ({ empty: true, docs: [] }));
+                if (!anySched.empty) schedule = anySched.docs[0].data();
+            }
+
+            if (schedule) {
+                container.innerHTML = `
+                    <div class="card">
+                        <h3>جدول حصص ${grade}</h3>
+                        ${schedule.image ? `<img src="${schedule.image}" alt="جدول الحصص" class="schedule-img">` : '<div class="empty-state">لا توجد صورة للجدول</div>'}
+                    </div>`;
+            } else {
+                container.innerHTML = '<div class="empty-state">لا يوجد جدول حصص لمجموعتك أو صفك حالياً</div>';
+            }
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = '<div class="empty-state">❌ حدث خطأ في تحميل الجدول. تأكد من وجود جداول مضافة.</div>';
         }
     }
     loadSchedule();

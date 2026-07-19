@@ -81,8 +81,8 @@
     let currentUser = null;
     async function init() {
         // تحميل إعدادات المنصة
-        const docSnap = await db.collection('settings').doc('platform').get();
-        if (docSnap.exists) {
+        const docSnap = await db.collection('settings').doc('platform').get().catch(() => null);
+        if (docSnap && docSnap.exists) {
             const data = docSnap.data();
             if (data.logo) document.getElementById('sidebarLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
             if (data.name) document.title = `الأسئلة | ${data.name}`;
@@ -95,47 +95,51 @@
 
     function loadQuestions() {
         const container = document.getElementById('questionsContent');
-        db.collection('questions').orderBy('createdAt','desc').onSnapshot(snap => {
-            let html = '';
-            snap.forEach(doc => {
-                const q = doc.data();
-                const replies = q.replies || [];
+        // ✅ تصفية الأسئلة حسب صف الطالب فقط
+        db.collection('questions')
+            .where('grade', '==', currentUser.grade)
+            .orderBy('createdAt', 'desc')
+            .onSnapshot(snap => {
+                let html = '';
+                snap.forEach(doc => {
+                    const q = doc.data();
+                    const replies = q.replies || [];
+                    html += `
+                    <div class="card question-card">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>${q.studentName || 'طالب'}</strong>
+                            <span style="color:var(--text-muted); font-size:0.8rem;">${q.createdAt?.toDate?.().toLocaleString('ar-EG') || ''}</span>
+                        </div>
+                        <p style="margin:8px 0;">${q.text || ''}</p>
+                        ${q.image ? `<img src="${q.image}" alt="صورة السؤال">` : ''}
+                        <div class="replies">
+                            ${replies.map(r => `
+                                <div class="reply-item">
+                                    <strong>${r.userName || 'طالب'}</strong>: ${r.text || ''}
+                                    ${r.image ? `<br><img src="${r.image}" alt="صورة الرد">` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="btn btn-sm" onclick="showReplyForm('${doc.id}')">رد</button>
+                        <div id="replyForm-${doc.id}" style="display:none; margin-top:8px;">
+                            <textarea id="replyText-${doc.id}" class="textarea-field" placeholder="اكتب ردك..."></textarea>
+                            <input type="hidden" id="replyImage-${doc.id}">
+                            <button class="upload-btn" onclick="uploadReplyImage('${doc.id}')">📷 صورة</button>
+                            <button class="btn btn-primary btn-sm" onclick="submitReply('${doc.id}')">إرسال الرد</button>
+                        </div>
+                    </div>`;
+                });
                 html += `
-                <div class="card question-card">
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong>${q.studentName || 'طالب'}</strong>
-                        <span style="color:var(--text-muted); font-size:0.8rem;">${q.createdAt?.toDate?.().toLocaleString('ar-EG') || ''}</span>
-                    </div>
-                    <p style="margin:8px 0;">${q.text || ''}</p>
-                    ${q.image ? `<img src="${q.image}" alt="صورة السؤال">` : ''}
-                    <div class="replies">
-                        ${replies.map(r => `
-                            <div class="reply-item">
-                                <strong>${r.userName || 'طالب'}</strong>: ${r.text || ''}
-                                ${r.image ? `<br><img src="${r.image}" alt="صورة الرد">` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button class="btn btn-sm" onclick="showReplyForm('${doc.id}')">رد</button>
-                    <div id="replyForm-${doc.id}" style="display:none; margin-top:8px;">
-                        <textarea id="replyText-${doc.id}" class="textarea-field" placeholder="اكتب ردك..."></textarea>
-                        <input type="hidden" id="replyImage-${doc.id}">
-                        <button class="upload-btn" onclick="uploadReplyImage('${doc.id}')">📷 صورة</button>
-                        <button class="btn btn-primary btn-sm" onclick="submitReply('${doc.id}')">إرسال الرد</button>
-                    </div>
+                <div class="card">
+                    <h3>اطرح سؤالاً</h3>
+                    <textarea id="newQuestionText" class="textarea-field" placeholder="اكتب سؤالك..."></textarea>
+                    <input type="hidden" id="newQuestionImage">
+                    <button class="upload-btn" onclick="uploadQuestionImage()">📷 رفع صورة</button>
+                    <div class="message" id="newQuestionMsg"></div>
+                    <button class="btn btn-primary" onclick="submitQuestion()">إرسال السؤال</button>
                 </div>`;
+                container.innerHTML = html;
             });
-            html += `
-            <div class="card">
-                <h3>اطرح سؤالاً</h3>
-                <textarea id="newQuestionText" class="textarea-field" placeholder="اكتب سؤالك..."></textarea>
-                <input type="hidden" id="newQuestionImage">
-                <button class="upload-btn" onclick="uploadQuestionImage()">📷 رفع صورة</button>
-                <div class="message" id="newQuestionMsg"></div>
-                <button class="btn btn-primary" onclick="submitQuestion()">إرسال السؤال</button>
-            </div>`;
-            container.innerHTML = html;
-        });
     }
 
     window.uploadQuestionImage = function() {
@@ -156,6 +160,7 @@
         const text = document.getElementById('newQuestionText').value.trim();
         const image = document.getElementById('newQuestionImage').value;
         if (!text && !image) { alert('اكتب سؤالاً أو ارفع صورة'); return; }
+        // ✅ تخزين الصف مع السؤال
         await db.collection('questions').add({
             studentId: currentUser.id,
             studentName: currentUser.name,

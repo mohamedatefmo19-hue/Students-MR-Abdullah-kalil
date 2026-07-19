@@ -37,26 +37,17 @@
         .btn-danger { background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.4); color:#f87171; }
         .empty-state { text-align:center; padding:60px; color:var(--text-muted); }
         .result-score { font-size:3rem; font-weight:800; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .logo-icon { width:42px; height:42px; border-radius:14px; background:var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; margin-bottom:20px; overflow:hidden; }
-        .logo-icon img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
         @media (max-width:600px) { .options { grid-template-columns:1fr; } }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="aurora" style="position:fixed; inset:0; pointer-events:none; z-index:0;">
-    <div class="orb" style="position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; width:700px; height:700px; background:#4da8da; top:-250px; left:-200px;"></div>
-    <div class="orb" style="position:absolute; border-radius:50%; filter:blur(140px); opacity:0.13; width:550px; height:550px; background:#7c5ce7; bottom:-200px; right:-180px;"></div>
-</div>
-
 <div class="timer-bar">
     <span>⏱️ الوقت المتبقي</span>
     <span class="timer" id="timerDisplay">60:00</span>
     <span id="attemptInfo" style="color:var(--text-muted);"></span>
 </div>
-<div class="exam-container" id="examContainer">
-    <div class="empty-state">⏳ جاري تحميل الامتحان...</div>
-</div>
+<div class="exam-container" id="examContainer">⏳ جاري تحميل الامتحان...</div>
 
 <script>
     const firebaseConfig = {
@@ -73,16 +64,7 @@
     const studentId = localStorage.getItem('studentId');
     const urlParams = new URLSearchParams(window.location.search);
     const examId = urlParams.get('id');
-    if (!studentId || !examId) { alert('بيانات ناقصة'); window.location.href = 'login.html'; }
-
-    // تحميل إعدادات المنصة
-    (async function loadSettings() {
-        const doc = await db.collection('settings').doc('platform').get();
-        if (doc.exists) {
-            const data = doc.data();
-            if (data.name) document.title = `الامتحان | ${data.name}`;
-        }
-    })();
+    if (!studentId || !examId) { window.location.href = 'login.html'; }
 
     let examData = null, questions = [], currentIndex = 0, userAnswers = {};
     let timerInterval = null, timeLeft = 3600, examSubmitted = false;
@@ -95,88 +77,120 @@
             const doc = await db.collection('exams').doc(examId).get();
             if (!doc.exists) { container.innerHTML = '<div class="empty-state">❌ الامتحان غير موجود</div>'; return; }
             examData = doc.data();
+
             const attemptsSnap = await db.collection('examResults')
-                .where('studentId','==',studentId).where('examId','==',examId).get();
+                .where('studentId', '==', studentId)
+                .where('examId', '==', examId)
+                .get();
             attemptCount = attemptsSnap.size;
             if (attemptCount >= MAX_ATTEMPTS) {
                 container.innerHTML = '<div class="empty-state">❌ استنفدت جميع المحاولات (3 كحد أقصى)</div>';
                 return;
             }
-            document.getElementById('attemptInfo').textContent = `المحاولة ${attemptCount+1} من ${MAX_ATTEMPTS}`;
-            questions = examData.questions ? [...examData.questions].sort(() => Math.random()-0.5) : [];
+            document.getElementById('attemptInfo').textContent = `المحاولة ${attemptCount + 1} من ${MAX_ATTEMPTS}`;
+            questions = examData.questions ? [...examData.questions].sort(() => Math.random() - 0.5) : [];
             if (!questions.length) { container.innerHTML = '<div class="empty-state">❌ لا توجد أسئلة</div>'; return; }
             startExam();
-        } catch(e) { container.innerHTML = '<div class="empty-state">❌ خطأ في تحميل الامتحان</div>'; }
+        } catch (e) {
+            container.innerHTML = '<div class="empty-state">❌ خطأ في تحميل الامتحان</div>';
+        }
     }
 
     function startExam() {
-        timeLeft = (parseInt(examData.time)||60)*60;
-        examSubmitted = false; userAnswers = {}; currentIndex = 0;
-        renderQuestion(); startTimer();
+        timeLeft = (parseInt(examData.time) || 60) * 60;
+        examSubmitted = false;
+        userAnswers = {};
+        currentIndex = 0;
+        renderQuestion();
+        startTimer();
         window.addEventListener('beforeunload', warnBeforeLeave);
         document.addEventListener('visibilitychange', handleVisibilityChange);
     }
 
     function startTimer() {
         updateTimer();
-        timerInterval = setInterval(() => { timeLeft--; updateTimer(); if(timeLeft<=0) submitExam('انتهى الوقت'); }, 1000);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimer();
+            if (timeLeft <= 0) submitExam('انتهى الوقت');
+        }, 1000);
     }
 
     function updateTimer() {
-        const m = Math.floor(timeLeft/60), s = timeLeft%60;
-        document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+        document.getElementById('timerDisplay').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
-    function warnBeforeLeave(e) { if(!examSubmitted) { e.preventDefault(); e.returnValue=''; } }
-    function handleVisibilityChange() { if(document.hidden && !examSubmitted) submitExam('تم الخروج من الامتحان'); }
+    function warnBeforeLeave(e) { if (!examSubmitted) { e.preventDefault(); e.returnValue = ''; } }
+
+    function handleVisibilityChange() {
+        if (document.hidden && !examSubmitted) submitExam('تم الخروج من الامتحان');
+    }
 
     function renderQuestion() {
-        if(examSubmitted || currentIndex>=questions.length) return;
+        if (examSubmitted || currentIndex >= questions.length) return;
         const q = questions[currentIndex];
         const selected = userAnswers[q.id];
         const container = document.getElementById('examContainer');
         container.innerHTML = `
         <div class="card question-card">
             <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                <span>سؤال ${currentIndex+1} من ${questions.length}</span>
+                <span>سؤال ${currentIndex + 1} من ${questions.length}</span>
                 <div>
-                    <button class="btn btn-sm" onclick="prevQ()" ${currentIndex===0?'disabled':''}>السابق</button>
-                    <button class="btn btn-sm btn-primary" onclick="nextQ()">${currentIndex===questions.length-1?'إنهاء':'التالي'}</button>
+                    <button class="btn btn-sm" onclick="prevQ()" ${currentIndex === 0 ? 'disabled' : ''}>السابق</button>
+                    <button class="btn btn-sm btn-primary" onclick="nextQ()">${currentIndex === questions.length - 1 ? 'إنهاء' : 'التالي'}</button>
                 </div>
             </div>
             ${q.image ? `<img src="${q.image}" alt="صورة السؤال">` : ''}
             <h3 style="margin-bottom:12px;">${q.text || 'السؤال بدون نص'}</h3>
             <div class="options">
-                ${q.options.map((opt,idx) => {
-                    const letter = ['أ','ب','ج','د'][idx];
-                    return `<div class="option ${selected===idx?'selected':''}" onclick="selectAnswer('${q.id}',${idx})"><span style="font-weight:bold; width:24px;">${letter}.</span> ${opt}</div>`;
+                ${q.options.map((opt, idx) => {
+                    const letter = ['أ', 'ب', 'ج', 'د'][idx];
+                    return `<div class="option ${selected === idx ? 'selected' : ''}" onclick="selectAnswer('${q.id}', ${idx})"><span style="font-weight:bold; width:24px;">${letter}.</span> ${opt}</div>`;
                 }).join('')}
             </div>
         </div>
         <div style="display:flex; gap:10px; justify-content:center;">
-            ${questions.map((_,i) => `<span style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; cursor:pointer; background:${userAnswers[questions[i].id]!==undefined?'var(--accent-2)':'var(--glass-bg)'}; border:1px solid var(--glass-border);" onclick="goTo(${i})">${i+1}</span>`).join('')}
+            ${questions.map((_, i) => `<span style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; cursor:pointer; background:${userAnswers[questions[i].id] !== undefined ? 'var(--accent-2)' : 'var(--glass-bg)'}; border:1px solid var(--glass-border);" onclick="goTo(${i})">${i + 1}</span>`).join('')}
         </div>
         <button class="btn btn-danger" style="margin-top:16px; width:100%;" onclick="submitExam('تسليم يدوي')">تسليم الامتحان</button>`;
     }
 
     window.selectAnswer = (qId, idx) => { userAnswers[qId] = idx; renderQuestion(); };
-    window.nextQ = () => { if(currentIndex<questions.length-1) { currentIndex++; renderQuestion(); } else { if(confirm('هل أنت متأكد من إنهاء الامتحان؟')) submitExam('تسليم يدوي'); } };
-    window.prevQ = () => { if(currentIndex>0) { currentIndex--; renderQuestion(); } };
+    window.nextQ = () => { if (currentIndex < questions.length - 1) { currentIndex++; renderQuestion(); } else { if (confirm('هل أنت متأكد من إنهاء الامتحان؟')) submitExam('تسليم يدوي'); } };
+    window.prevQ = () => { if (currentIndex > 0) { currentIndex--; renderQuestion(); } };
     window.goTo = (i) => { currentIndex = i; renderQuestion(); };
 
-    function submitExam(reason) {
-        if(examSubmitted) return;
-        examSubmitted = true; clearInterval(timerInterval);
+    async function submitExam(reason) {
+        if (examSubmitted) return;
+        examSubmitted = true;
+        clearInterval(timerInterval);
         window.removeEventListener('beforeunload', warnBeforeLeave);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
-        let correct=0, total=questions.length;
-        questions.forEach(q => { if(userAnswers[q.id]!==undefined && userAnswers[q.id]===q.correct) correct++; });
-        const percentage = Math.round((correct/total)*100);
-        db.collection('examResults').add({
-            studentId, examId: examData.id||examId, examName: examData.name||'',
-            score: correct, total, percentage, answers: userAnswers, reason,
-            attempt: attemptCount+1, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).catch(e => console.error(e));
+
+        let correct = 0, total = questions.length;
+        questions.forEach(q => { if (userAnswers[q.id] !== undefined && userAnswers[q.id] === q.correct) correct++; });
+        const percentage = Math.round((correct / total) * 100);
+
+        // ✅ حفظ النتيجة في Firestore بشكل موثوق
+        try {
+            await db.collection('examResults').add({
+                studentId: studentId,
+                examId: examId,
+                examName: examData.name || 'امتحان',
+                score: correct,
+                total: total,
+                percentage: percentage,
+                answers: userAnswers,
+                reason: reason,
+                attempt: attemptCount + 1,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log('✅ تم حفظ نتيجة الامتحان بنجاح');
+        } catch (e) {
+            console.error('❌ فشل حفظ نتيجة الامتحان:', e);
+        }
+
         renderResult(correct, total, percentage, reason);
     }
     window.submitExam = submitExam;
@@ -184,9 +198,11 @@
     function renderResult(correct, total, percentage, reason) {
         document.getElementById('examContainer').innerHTML = `
         <div class="card" style="text-align:center;">
-            <h2>🎉 انتهى الامتحان</h2><p style="color:var(--text-muted);">${reason}</p>
-            <div class="result-score">${correct}/${total}</div><p>النسبة: ${percentage}%</p>
-            ${attemptCount+1 < MAX_ATTEMPTS ? `<button class="btn btn-primary" onclick="retryExam()">إعادة المحاولة (${attemptCount+2}/${MAX_ATTEMPTS})</button>` : '<p>لا توجد محاولات متبقية</p>'}
+            <h2>🎉 انتهى الامتحان</h2>
+            <p style="color:var(--text-muted);">${reason}</p>
+            <div class="result-score">${correct}/${total}</div>
+            <p>النسبة: ${percentage}%</p>
+            ${attemptCount + 1 < MAX_ATTEMPTS ? `<button class="btn btn-primary" onclick="retryExam()">إعادة المحاولة (${attemptCount + 2}/${MAX_ATTEMPTS})</button>` : '<p>لا توجد محاولات متبقية</p>'}
             <a href="exams.html" class="btn" style="display:inline-block; margin-top:12px;">العودة للامتحانات</a>
         </div>`;
     }
@@ -196,7 +212,7 @@
         window.removeEventListener('beforeunload', warnBeforeLeave);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         examSubmitted = false;
-        questions = examData.questions ? [...examData.questions].sort(() => Math.random()-0.5) : [];
+        questions = examData.questions ? [...examData.questions].sort(() => Math.random() - 0.5) : [];
         startExam();
     };
 

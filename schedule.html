@@ -9,8 +9,8 @@
     <style>
         :root {
             --bg-deep: #020012;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-bg: rgba(255,255,255,0.03);
+            --glass-border: rgba(255,255,255,0.06);
             --text-primary: #f0f0f7;
             --text-muted: #6e6e90;
             --accent-gradient: linear-gradient(135deg, #4da8da, #7c5ce7, #22d3bb);
@@ -99,38 +99,48 @@
                 }
             }
 
-            // جلب الجدول: الأولوية للمجموعة ثم للصف العام
+            // جلب الجدول المناسب (بدون orderBy)
             let schedule = null;
             if (groupId) {
                 const snap = await db.collection('schedules')
                     .where('groupId', '==', groupId)
-                    .orderBy('createdAt', 'desc')
-                    .limit(1)
                     .get()
                     .catch(() => ({ empty: true, docs: [] }));
-                if (!snap.empty) schedule = snap.docs[0].data();
+                if (!snap.empty) {
+                    // ترتيب محلي للحصول على الأحدث
+                    const docs = [];
+                    snap.forEach(d => docs.push(d.data()));
+                    docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    schedule = docs[0];
+                }
             }
 
             if (!schedule) {
                 const snap = await db.collection('schedules')
                     .where('grade', '==', grade)
                     .where('groupId', '==', null)
-                    .orderBy('createdAt', 'desc')
-                    .limit(1)
                     .get()
                     .catch(() => ({ empty: true, docs: [] }));
-                if (!snap.empty) schedule = snap.docs[0].data();
+                if (!snap.empty) {
+                    const docs = [];
+                    snap.forEach(d => docs.push(d.data()));
+                    docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    schedule = docs[0];
+                }
             }
 
-            // محاولة أخيرة: أي جدول لنفس الصف
+            // محاولة أخيرة: أي جدول للصف
             if (!schedule) {
                 const snap = await db.collection('schedules')
                     .where('grade', '==', grade)
-                    .orderBy('createdAt', 'desc')
-                    .limit(1)
                     .get()
                     .catch(() => ({ empty: true, docs: [] }));
-                if (!snap.empty) schedule = snap.docs[0].data();
+                if (!snap.empty) {
+                    const docs = [];
+                    snap.forEach(d => docs.push(d.data()));
+                    docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    schedule = docs[0];
+                }
             }
 
             if (schedule) {

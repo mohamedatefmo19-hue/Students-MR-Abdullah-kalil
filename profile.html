@@ -48,6 +48,8 @@
         th { color:var(--text-muted); font-weight:600; font-size:0.7rem; }
         .message { padding:8px 12px; border-radius:14px; font-size:0.8rem; margin-top:8px; display:none; }
         .message.success { background:rgba(34,211,187,0.15); color:#22d3bb; border:1px solid rgba(34,211,187,0.3); }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:100; }
+        .modal { background:var(--bg-deep); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:20px; max-width:700px; width:90%; max-height:80vh; overflow-y:auto; }
         @media (max-width:768px) { .sidebar { position:fixed; right:-280px; top:0; bottom:0; z-index:55; } .sidebar.open { right:0; } .info-grid { grid-template-columns:1fr; } }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -106,14 +108,31 @@
             const grade = user.grade || '';
             const avatarUrl = localStorage.getItem('studentAvatar') || user.avatar || '';
 
-            let assignCount = 0, examResults = [];
+            // 1. إحصائيات
+            let assignCount = 0, examResults = [], totalExamsInGrade = 0;
             try { assignCount = (await db.collection('assignmentSubmissions').where('studentId','==',studentId).get()).size; } catch(e){}
             try {
-                const snap = await db.collection('examResults').where('studentId','==',studentId).orderBy('createdAt','desc').limit(10).get();
+                const snap = await db.collection('examResults').where('studentId','==',studentId).orderBy('createdAt','desc').get();
                 snap.forEach(d => examResults.push({id: d.id, ...d.data()}));
             } catch(e){}
+            try {
+                totalExamsInGrade = (await db.collection('exams').where('grade','==',grade).get()).size;
+            } catch(e){}
+            const solvedExamCount = examResults.length;
+            const examCompletionPercent = totalExamsInGrade > 0 ? Math.round((solvedExamCount / totalExamsInGrade) * 100) : 0;
             const avgScore = examResults.length ? Math.round(examResults.reduce((a,b)=>a+(b.percentage||0),0)/examResults.length) : 0;
 
+            // 2. آخر الواجبات
+            let recentAssignments = [];
+            try {
+                const assignSnap = await db.collection('assignmentSubmissions')
+                    .where('studentId','==',studentId)
+                    .orderBy('submittedAt','desc')
+                    .limit(5).get();
+                assignSnap.forEach(d => recentAssignments.push({id: d.id, ...d.data()}));
+            } catch(e){}
+
+            // عرض الصفحة
             container.innerHTML = `
             <div class="card profile-header">
                 <div class="avatar-wrapper">
@@ -155,9 +174,9 @@
                         <svg width="100" height="100" viewBox="0 0 36 36">
                             <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2.5"/>
                             <circle cx="18" cy="18" r="15.5" fill="none" stroke="#f472b6" stroke-width="2.5"
-                                stroke-dasharray="${Math.min((examResults.length/10)*100,100)},100" stroke-linecap="round"/>
+                                stroke-dasharray="${examCompletionPercent},100" stroke-linecap="round"/>
                         </svg>
-                        <div class="value">${examResults.length}</div>
+                        <div class="value">${examCompletionPercent}%</div>
                         <div style="color:var(--text-muted); font-size:0.8rem;">الامتحانات المحلولة</div>
                     </div>
                 </div>
@@ -165,14 +184,20 @@
 
             <h3>📝 نتائج الامتحانات الأخيرة</h3>
             <div class="card table-wrapper">
-                <table><thead><tr><th>الامتحان</th><th>الدرجة</th><th>النسبة</th><th>التاريخ</th></tr></thead>
-                <tbody>${examResults.length ? examResults.map(r => `<tr><td>${r.examName||''}</td><td>${r.score||0}/${r.total||0}</td><td>${r.percentage||0}%</td><td>${r.createdAt?.toDate?.().toLocaleDateString('ar-EG')||''}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;">لا توجد نتائج بعد</td></tr>'}</tbody></table>
+                <table><thead><tr><th>الامتحان</th><th>الدرجة</th><th>النسبة</th><th>التاريخ</th><th>تفاصيل</th></tr></thead>
+                <tbody>${examResults.length ? examResults.map(r => `<tr><td>${r.examName||''}</td><td>${r.score||0}/${r.total||0}</td><td>${r.percentage||0}%</td><td>${r.createdAt?.toDate?.().toLocaleDateString('ar-EG')||''}</td><td><button class="btn btn-sm" onclick="viewExamDetails('${r.id}','${r.examId}')">🔍</button></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;">لا توجد نتائج بعد</td></tr>'}</tbody></table>
+            </div>
+            <h3>📄 آخر الواجبات المسلّمة</h3>
+            <div class="card table-wrapper">
+                <table><thead><tr><th>الواجب</th><th>الحالة</th><th>الدرجة</th><th>تعليق</th></tr></thead>
+                <tbody>${recentAssignments.length ? recentAssignments.map(a => `<tr><td>${a.assignmentId?.substring(0,8)||'—'}</td><td>${a.score!==undefined ? '✅ مصحح' : '⏳ مسلّم'}</td><td>${a.score??'—'}</td><td>${a.feedback||'—'}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;">لا توجد واجبات بعد</td></tr>'}</tbody></table>
             </div>
             `;
         } catch(e) { container.innerHTML = '<div style="text-align:center;padding:40px;">❌ خطأ في تحميل البيانات</div>'; }
     }
     loadProfile();
 
+    // رفع الصورة
     window.uploadAvatar = function() {
         const msgEl = document.getElementById('uploadMsg');
         window.cloudinary.openUploadWidget({
@@ -189,6 +214,43 @@
             }
         });
     };
+
+    // تفاصيل الامتحان
+    window.viewExamDetails = async function(resultId, examId) {
+        // جلب نتيجة الامتحان
+        const resultDoc = await db.collection('examResults').doc(resultId).get();
+        if (!resultDoc.exists) return;
+        const result = resultDoc.data();
+        const answers = result.answers || {};
+        // جلب الامتحان الأصلي
+        const examDoc = await db.collection('exams').doc(examId).get();
+        if (!examDoc.exists) return;
+        const exam = examDoc.data();
+        const questions = exam.questions || [];
+        // بناء نافذة منبثقة
+        let modalHtml = `<div class="modal-overlay" id="examModal" onclick="if(event.target===this) this.remove()"><div class="modal"><h3>تفاصيل امتحان ${exam.name}</h3>`;
+        questions.forEach((q, i) => {
+            const userAnswer = answers[q.id] !== undefined ? answers[q.id] : -1;
+            const isCorrect = userAnswer === q.correct;
+            modalHtml += `<div style="margin:12px 0; padding:8px; background:rgba(255,255,255,0.02); border-radius:12px;">
+                <strong>سؤال ${i+1}:</strong> ${q.text||''}
+                ${q.image ? `<br><img src="${q.image}" style="max-width:200px; border-radius:8px; margin:4px 0;">` : ''}
+                <div style="margin-top:6px;">
+                    ${q.options.map((opt, idx) => {
+                        let style = '';
+                        if (idx === q.correct) style = 'background:rgba(34,211,187,0.2); border:1px solid #22d3bb;';
+                        if (idx === userAnswer && idx !== q.correct) style = 'background:rgba(239,68,68,0.2); border:1px solid #f87171;';
+                        if (idx === userAnswer && idx === q.correct) style = 'background:rgba(34,211,187,0.3); border:1px solid #22d3bb;';
+                        return `<div style="padding:4px 8px; border-radius:8px; margin:2px 0; ${style}">${['أ','ب','ج','د'][idx]}. ${opt}</div>`;
+                    }).join('')}
+                </div>
+                <span style="font-size:0.8rem; color:${isCorrect ? 'var(--accent-3)' : 'var(--danger)'};">${isCorrect ? '✅ صحيحة' : '❌ خطأ'}</span>
+            </div>`;
+        });
+        modalHtml += `<button class="btn" onclick="document.getElementById('examModal').remove()">إغلاق</button></div></div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    };
+
     window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
 </script>
 </body>

@@ -27,7 +27,16 @@
         .container { position:relative; z-index:10; width:100%; max-width:500px; animation:cardEnter 0.7s cubic-bezier(0.34,1.56,0.64,1); }
         @keyframes cardEnter { from{opacity:0;transform:translateY(40px) scale(0.92);} to{opacity:1;transform:translateY(0) scale(1);} }
         .card { background:var(--glass-bg); backdrop-filter:blur(35px); border:1px solid var(--glass-border); border-radius:var(--radius-xl); padding:36px 28px; box-shadow:0 25px 70px rgba(0,0,0,0.6),var(--shadow-glow); }
-        .logo-icon { width:60px; height:60px; border-radius:16px; background:var(--gradient-1); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.6rem; color:#fff; margin:0 auto 16px; box-shadow:0 0 35px rgba(124,92,231,0.5); animation:logoPulse 3s infinite; }
+        .logo-icon {
+            width:60px; height:60px; border-radius:16px; background:var(--gradient-1);
+            display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.6rem;
+            color:#fff; margin:0 auto 16px; box-shadow:0 0 35px rgba(124,92,231,0.5);
+            animation:logoPulse 3s infinite; overflow:hidden;
+        }
+        /* ✅ تعديل حجم صورة اللوجو */
+        .logo-icon img {
+            width:100%; height:100%; object-fit:cover; border-radius:inherit;
+        }
         @keyframes logoPulse { 0%,100%{box-shadow:0 0 35px rgba(124,92,231,0.5);} 50%{box-shadow:0 0 55px rgba(124,92,231,0.8),0 0 80px rgba(77,168,218,0.3);} }
         .platform-name { text-align:center; font-size:1.4rem; font-weight:700; margin-bottom:4px; }
         .tabs { display:flex; gap:8px; margin-bottom:28px; }
@@ -141,7 +150,11 @@
             const doc = await db.collection('settings').doc('platform').get().catch(() => null);
             if (doc && doc.exists) {
                 const data = doc.data();
-                if (data.logo) document.getElementById('loginLogo').innerHTML = `<img src="${data.logo}" alt="لوجو">`;
+                if (data.logo) {
+                    const logoEl = document.getElementById('loginLogo');
+                    logoEl.innerHTML = `<img src="${data.logo}" alt="لوجو" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+                    logoEl.style.background = 'none';
+                }
                 if (data.name) { document.getElementById('platformNameDisplay').textContent = data.name; document.title = `تسجيل الدخول | ${data.name}`; }
             }
         })();
@@ -165,7 +178,6 @@
             document.getElementById('tabRegister').classList.remove('active');
         };
 
-        // تسجيل الدخول
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value;
@@ -188,7 +200,6 @@
             }
         });
 
-        // استعادة كلمة المرور
         document.getElementById('forgotForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('forgotEmail').value.trim();
@@ -200,7 +211,6 @@
             catch(err) { errorMsg.textContent = err.code==='auth/user-not-found'?'البريد غير مسجل':'خطأ'; errorMsg.style.display='block'; btn.disabled=false; btn.textContent='إرسال'; }
         });
 
-        // إنشاء حساب (مع رمز الدولة)
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('regName').value.trim();
@@ -214,7 +224,6 @@
             const errorMsg = document.getElementById('errorMsg'), successMsg = document.getElementById('successMsg');
             errorMsg.style.display='none'; successMsg.style.display='none';
 
-            // التحقق من صحة رقم الهاتف المصري
             const phoneRegex = /^01[0-9]{9}$/;
             if(!phoneRegex.test(phone)) { errorMsg.textContent='رقم الهاتف غير صحيح (يجب أن يبدأ بـ 01 ويتكون من 11 رقم)'; errorMsg.style.display='block'; return; }
             if(!phoneRegex.test(parentPhone)) { errorMsg.textContent='رقم ولي الأمر غير صحيح'; errorMsg.style.display='block'; return; }
